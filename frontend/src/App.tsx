@@ -1,23 +1,36 @@
-import { useRef, useState } from 'react';
+import { useRef, useState, useEffect } from 'react';
 import Draggable from 'react-draggable';
 import { DataGrid } from '@mui/x-data-grid';
 import type { GridColDef, GridRenderCellParams } from '@mui/x-data-grid';
-import { Button } from '@mui/material';
+import { Button, CircularProgress, Box } from '@mui/material';
 
 type PresenceStatus = 'present' | 'remote' | 'away' | 'vacant';
 
-type Person = {
-  id: string;
+type User = {
+  id: number;
   name: string;
+  presence: PresenceStatus;
+  note1?: string;
+  note2?: string;
+  check1?: boolean;
+  check2?: boolean;
+  x: number;
+  y: number;
+  team?: string;
+  order?: number;
+  dashboard_id?: number;
 };
 
 type Seat = {
-  id: string;
+  id: number;
   x: number;
   y: number;
   status: PresenceStatus;
-  personId?: string;
+  userId?: number;
+  user?: User;
 };
+
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
 const STATUS_COLOR: Record<PresenceStatus, string> = {
   present: '#4caf50',
@@ -41,15 +54,15 @@ const nextStatus = (status: PresenceStatus): PresenceStatus => {
 function SeatItem({
   seat,
   onUpdate,
-  persons,
+  users,
 }: {
   seat: Seat;
-  onUpdate: (id: string, data: Partial<Seat>) => void;
-  persons: Person[];
+  onUpdate: (id: number, data: Partial<Seat>) => void;
+  users: User[];
 }) {
   const draggedRef = useRef(false);
   const nodeRef = useRef<HTMLDivElement>(null);
-  const person = persons.find(p => p.id === seat.personId);
+  const user = users.find(u => u.id === seat.userId);
 
   return (
     <Draggable
@@ -70,7 +83,8 @@ function SeatItem({
         ref={nodeRef}
         onClick={() => {
           if (draggedRef.current) return;
-          onUpdate(seat.id, { status: nextStatus(seat.status) });
+          const nextPresence = nextStatus(seat.status);
+          onUpdate(seat.id, { status: nextPresence });
         }}
         style={{
           width: 100,
@@ -89,7 +103,7 @@ function SeatItem({
           fontSize: 12,
         }}
       >
-        {person && <div style={{ fontSize: 16 }}>{person.name}</div>}
+        {user && <div style={{ fontSize: 16 }}>{user.name}</div>}
       </div>
     </Draggable>
   );
@@ -97,60 +111,139 @@ function SeatItem({
 
 
 export default function App() {
-  const [persons] = useState<Person[]>([
-    { id: '1', name: '織田 信長' },
-    { id: '2', name: '柴田 勝家' },
-    { id: '3', name: '丹羽 長秀' },
-  ]);
+  const [users, setUsers] = useState<User[]>([]);
+  const [seats, setSeats] = useState<Seat[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [dashboardId, setDashboardId] = useState<number>(1);
 
-  const [seats, setSeats] = useState<Seat[]>([
-    { id: 'A1', x: 50, y: 50, status: 'present', personId: '1' },
-    { id: 'A2', x: 150, y: 50, status: 'away', personId: '2' },
-    { id: 'B1', x: 50, y: 150, status: 'vacant' },
-  ]);
+  // Initialize: fetch users from backend and set up auto-refresh
+  useEffect(() => {
+    fetchUsers();
+    // Auto-refresh every 10 seconds
+    const interval = setInterval(fetchUsers, 10 *1000);
+    return () => clearInterval(interval);
+  }, [dashboardId]);
 
-  const updateSeat = (id: string, data: Partial<Seat>) => {
-    setSeats((prev) =>
-      prev.map((seat) =>
-        seat.id === id ? { ...seat, ...data } : seat
-      )
-    );
+  const fetchUsers = async () => {
+    try {
+      setLoading(true);
+      const response = await fetch(`${API_BASE_URL}/api/users/${dashboardId}`);
+      if (!response.ok) throw new Error('Failed to fetch users');
+
+      const data = await response.json();
+      setUsers(data);
+
+      // Create seats from users, using stored x, y positions from database
+      const newSeats = data.map((user: User) => ({
+        id: user.id,
+        x: user.x || 0,
+        y: user.y || 0,
+        status: user.presence,
+        userId: user.id,
+        user: user,
+      }));
+      setSeats(newSeats);
+    } catch (error) {
+      console.error('Error fetching users:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const updateSeat = async (id: number, data: Partial<Seat>) => {
+    try {
+      const user = users.find(u => u.id === id);
+      if (!user) return;
+
+      // Prepare update payload with current user data
+      const updatePayload: any = {
+        name: user.name,
+        presence: data.status || user.presence,
+        note1: user.note1 || '',
+        note2: user.note2 || '',
+        check1: user.check1 || false,
+        check2: user.check2 || false,
+        x: data.x !== undefined ? data.x : user.x,
+        y: data.y !== undefined ? data.y : user.y,
+      };
+
+      // Send update to backend
+      const response = await fetch(`${API_BASE_URL}/api/users/${id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(updatePayload),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to update user');
+      }
+
+      // Update local state after successful backend update
+      setUsers((prev) =>
+        prev.map((u) =>
+          u.id === id ? { ...u, ...updatePayload } : u
+        )
+      );
+
+      setSeats((prev) =>
+        prev.map((seat) =>
+          seat.id === id ? {
+            ...seat,
+            ...data,
+            status: updatePayload.presence,
+            user: { ...user, ...updatePayload }
+          } : seat
+        )
+      );
+    } catch (error) {
+      console.error('Error updating seat:', error);
+      // Revert on error
+      fetchUsers();
+    }
   };
 
   const columns: GridColDef[] = [
-    { field: 'id', headerName: 'ID', width: 90 },
+    // { field: 'id', headerName: 'ID', width: 90 },
+    { field: 'team', headerName: 'Team', width: 120 },
+    { field: 'name', headerName: 'Name', width: 120 },
     {
-      field: 'personId',
-      headerName: 'Name',
-      width: 120,
-      renderCell: (params: GridRenderCellParams) => {
-        const person = persons.find(p => p.id === params.row.personId);
-        return person ? person.name : '-';
-      }
-    },
-    {
-      field: 'status', headerName: 'Status', width: 130,
+      field: 'presence', headerName: 'Status', width: 130,
       renderCell: (params: GridRenderCellParams) => (
         <Button
           size="small"
           variant="contained"
-          onClick={() => updateSeat(params.row.id, { status: nextStatus(params.row.status as PresenceStatus) })}
+          onClick={() => {
+            const nextPresence = nextStatus(params.row.presence as PresenceStatus);
+            updateSeat(params.row.id, { status: nextPresence });
+          }}
           sx={{
-            backgroundColor: STATUS_COLOR[params.row.status as PresenceStatus],
-            color: params.row.status === 'vacant' ? '#333' : '#fff',
+            backgroundColor: STATUS_COLOR[params.row.presence as PresenceStatus],
+            color: params.row.presence === 'vacant' ? '#333' : '#fff',
             textTransform: 'capitalize',
             '&:hover': {
               opacity: 0.8,
             }
           }}
         >
-          {params.row.status}
+          {params.row.presence}
         </Button>
       )
     },
     { field: 'x', headerName: 'X', width: 70 },
     { field: 'y', headerName: 'Y', width: 70 },
+    { field: 'note1', headerName: 'Note 1', width: 150 },
+    { field: 'note2', headerName: 'Note 2', width: 150 },
   ];
+
+  if (loading) {
+    return (
+      <Box display="flex" justifyContent="center" alignItems="center" height="100vh">
+        <CircularProgress />
+      </Box>
+    );
+  }
 
   return (
     <div
@@ -159,50 +252,59 @@ export default function App() {
         width: '100vw',
         height: '100vh',
         backgroundColor: '#f5f5f5',
+        flexDirection: 'column',
       }}
     >
-      {/* 左側：座席配置 */}
-      <div
-        style={{
-          flex: 1,
-          position: 'relative',
-          overflow: 'hidden',
-          borderRight: '1px solid #ddd',
-        }}
-      >
-        {seats.map((seat) => (
-          <SeatItem
-            key={seat.id}
-            seat={seat}
-            onUpdate={updateSeat}
-            persons={persons}
-          />
-        ))}
+      {/* Header */}
+      <div style={{ padding: '10px', backgroundColor: '#fff', borderBottom: '1px solid #ddd' }}>
+        <h1 style={{ margin: '0 0 10px 0', fontSize: '24px' }}>Presence Dashboard</h1>
       </div>
 
-      {/* 右側：データグリッド */}
-      <div
-        style={{
-          width: '67vw',
-          height: '100vh',
-          overflow: 'auto',
-          backgroundColor: '#fff',
-        }}
-      >
-        <DataGrid
-          rows={seats}
-          columns={columns}
-          pageSizeOptions={[5, 10]}
-          initialState={{
-            pagination: { paginationModel: { pageSize: 10 } },
+      {/* Content */}
+      <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
+        {/* Left side: Seat layout */}
+        <div
+          style={{
+            flex: 1,
+            position: 'relative',
+            overflow: 'hidden',
+            borderRight: '1px solid #ddd',
           }}
-          disableRowSelectionOnClick
-          sx={{
-            '& .MuiDataGrid-root': {
-              border: 'none',
-            }
+        >
+          {seats.map((seat) => (
+            <SeatItem
+              key={seat.id}
+              seat={seat}
+              onUpdate={updateSeat}
+              users={users}
+            />
+          ))}
+        </div>
+
+        {/* Right side: Data Grid */}
+        <div
+          style={{
+            width: '67vw',
+            height: '100%',
+            overflow: 'auto',
+            backgroundColor: '#fff',
           }}
-        />
+        >
+          <DataGrid
+            rows={users}
+            columns={columns}
+            pageSizeOptions={[5, 10]}
+            initialState={{
+              pagination: { paginationModel: { pageSize: 10 } },
+            }}
+            disableRowSelectionOnClick
+            sx={{
+              '& .MuiDataGrid-root': {
+                border: 'none',
+              }
+            }}
+          />
+        </div>
       </div>
     </div>
   );
