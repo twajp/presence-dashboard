@@ -4,7 +4,7 @@ import { DataGrid } from '@mui/x-data-grid';
 import type { GridColDef, GridRenderCellParams } from '@mui/x-data-grid';
 import { Button } from '@mui/material';
 
-type PresenceStatus = 'present' | 'away' | 'remote' | 'vacant';
+type PresenceStatus = 'present' | 'remote' | 'away' | 'vacant';
 
 type Seat = {
   id: string;
@@ -15,15 +15,15 @@ type Seat = {
 
 const STATUS_COLOR: Record<PresenceStatus, string> = {
   present: '#4caf50',
-  away: '#ffc107',
   remote: '#2196f3',
+  away: '#ffc107',
   vacant: '#e0e0e0',
 };
 
 const STATUS_ORDER: PresenceStatus[] = [
   'present',
-  'away',
   'remote',
+  'away',
   'vacant',
 ];
 
@@ -46,6 +46,7 @@ function SeatItem({
     <Draggable
       nodeRef={nodeRef}
       position={{ x: seat.x, y: seat.y }}
+      grid={[10, 10]}
       onStart={() => {
         draggedRef.current = false;
       }}
@@ -102,7 +103,7 @@ export default function App() {
   const columns: GridColDef[] = [
     { field: 'id', headerName: 'ID', width: 90 },
     {
-      field: 'status', headerName: 'ステータス', width: 130,
+      field: 'status', headerName: 'Status', width: 130,
       renderCell: (params: GridRenderCellParams) => (
         <Button
           size="small"
@@ -155,7 +156,7 @@ export default function App() {
       {/* 右側：データグリッド */}
       <div
         style={{
-          width: 400,
+          width: '67vw',
           height: '100vh',
           overflow: 'auto',
           backgroundColor: '#fff',
