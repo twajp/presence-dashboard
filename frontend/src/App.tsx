@@ -6,11 +6,17 @@ import { Button } from '@mui/material';
 
 type PresenceStatus = 'present' | 'remote' | 'away' | 'vacant';
 
+type Person = {
+  id: string;
+  name: string;
+};
+
 type Seat = {
   id: string;
   x: number;
   y: number;
   status: PresenceStatus;
+  personId?: string;
 };
 
 const STATUS_COLOR: Record<PresenceStatus, string> = {
@@ -35,12 +41,15 @@ const nextStatus = (status: PresenceStatus): PresenceStatus => {
 function SeatItem({
   seat,
   onUpdate,
+  persons,
 }: {
   seat: Seat;
   onUpdate: (id: string, data: Partial<Seat>) => void;
+  persons: Person[];
 }) {
   const draggedRef = useRef(false);
   const nodeRef = useRef<HTMLDivElement>(null);
+  const person = persons.find(p => p.id === seat.personId);
 
   return (
     <Draggable
@@ -64,11 +73,12 @@ function SeatItem({
           onUpdate(seat.id, { status: nextStatus(seat.status) });
         }}
         style={{
-          width: 60,
-          height: 60,
+          width: 100,
+          height: 50,
           borderRadius: 8,
           backgroundColor: STATUS_COLOR[seat.status],
           display: 'flex',
+          flexDirection: 'column',
           alignItems: 'center',
           justifyContent: 'center',
           fontWeight: 'bold',
@@ -76,9 +86,10 @@ function SeatItem({
           userSelect: 'none',
           position: 'absolute',
           boxShadow: '0 2px 6px rgba(0,0,0,0.2)',
+          fontSize: 12,
         }}
       >
-        {seat.id}
+        {person && <div style={{ fontSize: 16 }}>{person.name}</div>}
       </div>
     </Draggable>
   );
@@ -86,9 +97,15 @@ function SeatItem({
 
 
 export default function App() {
+  const [persons] = useState<Person[]>([
+    { id: '1', name: '織田 信長' },
+    { id: '2', name: '柴田 勝家' },
+    { id: '3', name: '丹羽 長秀' },
+  ]);
+
   const [seats, setSeats] = useState<Seat[]>([
-    { id: 'A1', x: 50, y: 50, status: 'present' },
-    { id: 'A2', x: 150, y: 50, status: 'away' },
+    { id: 'A1', x: 50, y: 50, status: 'present', personId: '1' },
+    { id: 'A2', x: 150, y: 50, status: 'away', personId: '2' },
     { id: 'B1', x: 50, y: 150, status: 'vacant' },
   ]);
 
@@ -102,6 +119,15 @@ export default function App() {
 
   const columns: GridColDef[] = [
     { field: 'id', headerName: 'ID', width: 90 },
+    {
+      field: 'personId',
+      headerName: 'Name',
+      width: 120,
+      renderCell: (params: GridRenderCellParams) => {
+        const person = persons.find(p => p.id === params.row.personId);
+        return person ? person.name : '-';
+      }
+    },
     {
       field: 'status', headerName: 'Status', width: 130,
       renderCell: (params: GridRenderCellParams) => (
@@ -149,6 +175,7 @@ export default function App() {
             key={seat.id}
             seat={seat}
             onUpdate={updateSeat}
+            persons={persons}
           />
         ))}
       </div>
