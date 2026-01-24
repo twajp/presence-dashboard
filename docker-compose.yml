@@ -20,3 +20,17 @@ services:
     volumes:
       - ./backend:/app
     command: npm run dev
+
+  database:
+    image: mysql:latest
+    container_name: mysql-dev
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: database-dev
+      MYSQL_USER: user
+      MYSQL_PASSWORD: password
+      TZ: Asia/Tokyo
+    ports:
+        - 3306:3306
+    volumes:
+      - ./database:/docker-entrypoint-initdb.d
