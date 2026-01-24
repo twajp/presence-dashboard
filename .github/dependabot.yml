@@ -1,0 +1,39 @@
+version: 2
+updates:
+  - package-ecosystem: 'npm'
+    directories:
+      - '/frontend'
+      - '/backend'
+    schedule:
+      interval: 'daily'
+      timezone: 'Asia/Tokyo'
+      time: '06:00'
+    open-pull-requests-limit: 1000
+    
+  - package-ecosystem: 'docker'
+    directories:
+      - '/frontend'
+      - '/backend'
+    schedule:
+      interval: 'daily'
+      timezone: 'Asia/Tokyo'
+      time: '06:00'
+    open-pull-requests-limit: 1000
+
+  - package-ecosystem: 'docker-compose'
+    directories:
+      - '/'
+    schedule:
+      interval: 'daily'
+      timezone: 'Asia/Tokyo'
+      time: '06:00'
+    open-pull-requests-limit: 1000
+
+  # - package-ecosystem: 'github-actions'
+  #   directories:
+  #     - '/'
+  #   schedule:
+  #     interval: 'daily'
+  #     timezone: 'Asia/Tokyo'
+  #     time: '06:00'
+  #   open-pull-requests-limit: 1000
