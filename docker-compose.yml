@@ -1,0 +1,22 @@
+services:
+  frontend:
+    build: ./frontend
+    container_name: presence-dashboard-frontend-dev
+    ports:
+      - 5173:5173
+    environment:
+      TZ: Asia/Tokyo
+    volumes:
+      - ./frontend:/app
+    command: npm run dev -- --host 0.0.0.0
+
+  backend:
+    build: ./backend
+    container_name: presence-dashboard-backend-dev
+    ports:
+      - 3000:3000
+    environment:
+      TZ: Asia/Tokyo
+    volumes:
+      - ./backend:/app
+    command: npm run dev
