@@ -1,8 +1,19 @@
 {
+  "name": "presence-dashboard-backend",
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "tsx src/index.ts",
+    "build": "tsc"
+  },
   "dependencies": {
-    "express": "^5.2.1"
+    "express": "^5.2.1",
+    "mysql2": "^3.8.0"
   },
   "devDependencies": {
-    "nodemon": "^3.1.11"
+    "tsx": "^4.7.0",
+    "typescript": "^5.3.3",
+    "@types/express": "^4.17.21",
+    "@types/node": "^20.10.6"
   }
 }
