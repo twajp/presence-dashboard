@@ -228,8 +228,8 @@ export default function App() {
       field: 'presence', headerName: 'Status', width: 130,
       renderCell: (params: GridRenderCellParams) => (
         <Button
-          size="small"
-          variant="contained"
+          size='small'
+          variant='contained'
           onClick={() => {
             const nextPresence = nextStatus(params.row.presence as PresenceStatus);
             updateSeat(params.row.id as number, { presence: nextPresence });
@@ -251,7 +251,7 @@ export default function App() {
 
   if (loading) {
     return (
-      <Box display="flex" justifyContent="center" alignItems="center" height="100vh">
+      <Box display='flex' justifyContent='center' alignItems='center' height='100vh'>
         <CircularProgress />
       </Box>
     );
