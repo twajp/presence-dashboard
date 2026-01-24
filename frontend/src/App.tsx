@@ -244,6 +244,7 @@ export default function App() {
             borderRadius: 0,
             backgroundColor: STATUS_COLOR[params.row.presence as PresenceStatus],
             color: params.row.presence === 'off' ? '#333' : '#fff',
+            boxShadow: 'none',
             textTransform: 'capitalize',
             '&:hover': {
               opacity: 0.8,
