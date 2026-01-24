@@ -1,5 +1,8 @@
 import { useRef, useState } from 'react';
 import Draggable from 'react-draggable';
+import { DataGrid } from '@mui/x-data-grid';
+import type { GridColDef, GridRenderCellParams } from '@mui/x-data-grid';
+import { Button } from '@mui/material';
 
 type PresenceStatus = 'present' | 'away' | 'remote' | 'vacant';
 
@@ -96,23 +99,83 @@ export default function App() {
     );
   };
 
+  const columns: GridColDef[] = [
+    { field: 'id', headerName: 'ID', width: 90 },
+    {
+      field: 'status', headerName: 'ステータス', width: 130,
+      renderCell: (params: GridRenderCellParams) => (
+        <Button
+          size="small"
+          variant="contained"
+          onClick={() => updateSeat(params.row.id, { status: nextStatus(params.row.status as PresenceStatus) })}
+          sx={{
+            backgroundColor: STATUS_COLOR[params.row.status as PresenceStatus],
+            color: params.row.status === 'vacant' ? '#333' : '#fff',
+            textTransform: 'capitalize',
+            '&:hover': {
+              opacity: 0.8,
+            }
+          }}
+        >
+          {params.row.status}
+        </Button>
+      )
+    },
+    { field: 'x', headerName: 'X', width: 70 },
+    { field: 'y', headerName: 'Y', width: 70 },
+  ];
+
   return (
     <div
       style={{
+        display: 'flex',
         width: '100vw',
         height: '100vh',
-        position: 'relative',
         backgroundColor: '#f5f5f5',
-        overflow: 'hidden',
       }}
     >
-      {seats.map((seat) => (
-        <SeatItem
-          key={seat.id}
-          seat={seat}
-          onUpdate={updateSeat}
+      {/* 左側：座席配置 */}
+      <div
+        style={{
+          flex: 1,
+          position: 'relative',
+          overflow: 'hidden',
+          borderRight: '1px solid #ddd',
+        }}
+      >
+        {seats.map((seat) => (
+          <SeatItem
+            key={seat.id}
+            seat={seat}
+            onUpdate={updateSeat}
+          />
+        ))}
+      </div>
+
+      {/* 右側：データグリッド */}
+      <div
+        style={{
+          width: 400,
+          height: '100vh',
+          overflow: 'auto',
+          backgroundColor: '#fff',
+        }}
+      >
+        <DataGrid
+          rows={seats}
+          columns={columns}
+          pageSizeOptions={[5, 10]}
+          initialState={{
+            pagination: { paginationModel: { pageSize: 10 } },
+          }}
+          disableRowSelectionOnClick
+          sx={{
+            '& .MuiDataGrid-root': {
+              border: 'none',
+            }
+          }}
         />
-      ))}
+      </div>
     </div>
   );
 }
