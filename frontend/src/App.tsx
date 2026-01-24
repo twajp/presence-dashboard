@@ -88,7 +88,7 @@ function SeatItem({
         style={{
           width: 100,
           height: 50,
-          borderRadius: 8,
+          borderRadius: 0,
           backgroundColor: STATUS_COLOR[seat.status],
           display: 'flex',
           flexDirection: 'column',
@@ -222,10 +222,14 @@ export default function App() {
   };
 
   const columns: GridColDef[] = [
+    // { field: 'id', headerName: 'ID', width: 10 },
     { field: 'team', headerName: 'Team', width: 120 },
     { field: 'name', headerName: 'Name', width: 120 },
     {
-      field: 'presence', headerName: 'Status', width: 130,
+      field: 'presence',
+      headerName: 'Status',
+      width: 100,
+      display: 'flex',
       renderCell: (params: GridRenderCellParams) => (
         <Button
           size='small'
@@ -235,18 +239,24 @@ export default function App() {
             updateSeat(params.row.id as number, { presence: nextPresence });
           }}
           sx={{
+            height: '100%',
+            width: '100%',
+            borderRadius: 0,
             backgroundColor: STATUS_COLOR[params.row.presence as PresenceStatus],
             color: params.row.presence === 'off' ? '#333' : '#fff',
             textTransform: 'capitalize',
-            '&:hover': { opacity: 0.8 },
+            '&:hover': {
+              opacity: 0.8,
+              backgroundColor: STATUS_COLOR[params.row.presence as PresenceStatus],
+            },
           }}
         >
           {params.row.presence}
         </Button>
       ),
     },
-    { field: 'note1', headerName: 'Note 1', width: 150, editable: true },
-    { field: 'note2', headerName: 'Note 2', width: 150, editable: true },
+    { field: 'note1', headerName: 'Note 1', flex: 1, editable: true },
+    { field: 'note2', headerName: 'Note 2', flex: 1, editable: true },
   ];
 
   if (loading) {
@@ -305,9 +315,11 @@ export default function App() {
           <DataGrid
             rows={users}
             columns={columns}
+            columnHeaderHeight={30}
+            rowHeight={30}
             processRowUpdate={handleProcessRowUpdate}
             onProcessRowUpdateError={(err) => console.error(err)}
-            hideFooterPagination
+            hideFooter
             sx={{
               border: 'none',
               height: '100%',
