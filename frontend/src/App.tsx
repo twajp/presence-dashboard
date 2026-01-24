@@ -4,7 +4,7 @@ import { DataGrid } from '@mui/x-data-grid';
 import type { GridColDef, GridRenderCellParams } from '@mui/x-data-grid';
 import { Button, CircularProgress, Box } from '@mui/material';
 
-type PresenceStatus = 'present' | 'remote' | 'away' | 'vacant';
+type PresenceStatus = 'present' | 'remote' | 'trip' | 'off';
 
 type User = {
   id: number;
@@ -35,15 +35,15 @@ const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 const STATUS_COLOR: Record<PresenceStatus, string> = {
   present: '#4caf50',
   remote: '#2196f3',
-  away: '#ffc107',
-  vacant: '#e0e0e0',
+  trip: '#ffc107',
+  off: '#e0e0e0',
 };
 
 const STATUS_ORDER: PresenceStatus[] = [
   'present',
   'remote',
-  'away',
-  'vacant',
+  'trip',
+  'off',
 ];
 
 const nextStatus = (status: PresenceStatus): PresenceStatus => {
@@ -103,7 +103,10 @@ function SeatItem({
           fontSize: 12,
         }}
       >
-        {user && <div style={{ fontSize: 16 }}>{user.name}</div>}
+        {user && <div style={{
+          fontSize: 16,
+          color: seat.status === 'off' ? '#333' : '#fff',
+        }}>{user.name}</div>}
       </div>
     </Draggable>
   );
@@ -114,13 +117,13 @@ export default function App() {
   const [users, setUsers] = useState<User[]>([]);
   const [seats, setSeats] = useState<Seat[]>([]);
   const [loading, setLoading] = useState(true);
-  const [dashboardId, setDashboardId] = useState<number>(1);
+  const [dashboardId] = useState<number>(1);
 
   // Initialize: fetch users from backend and set up auto-refresh
   useEffect(() => {
     fetchUsers();
     // Auto-refresh every 10 seconds
-    const interval = setInterval(fetchUsers, 10 *1000);
+    const interval = setInterval(fetchUsers, 10 * 1000);
     return () => clearInterval(interval);
   }, [dashboardId]);
 
@@ -220,7 +223,7 @@ export default function App() {
           }}
           sx={{
             backgroundColor: STATUS_COLOR[params.row.presence as PresenceStatus],
-            color: params.row.presence === 'vacant' ? '#333' : '#fff',
+            color: params.row.presence === 'off' ? '#333' : '#fff',
             textTransform: 'capitalize',
             '&:hover': {
               opacity: 0.8,
@@ -231,8 +234,8 @@ export default function App() {
         </Button>
       )
     },
-    { field: 'x', headerName: 'X', width: 70 },
-    { field: 'y', headerName: 'Y', width: 70 },
+    // { field: 'x', headerName: 'X', width: 70 },
+    // { field: 'y', headerName: 'Y', width: 70 },
     { field: 'note1', headerName: 'Note 1', width: 150 },
     { field: 'note2', headerName: 'Note 2', width: 150 },
   ];
