@@ -20,6 +20,9 @@ services:
     volumes:
       - ./backend:/app
     command: npm run dev
+    depends_on:
+      database:
+        condition: service_healthy
 
   database:
     image: mysql:latest
@@ -35,3 +38,8 @@ services:
     volumes:
       - ./database:/docker-entrypoint-initdb.d
       - ./database/my.cnf:/etc/mysql/conf.d/my.cnf
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "user", "-p${MYSQL_PASSWORD}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
