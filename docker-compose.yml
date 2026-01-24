@@ -1,7 +1,7 @@
 services:
   frontend:
     build: ./frontend
-    container_name: presence-dashboard-frontend-dev
+    container_name: frontend-dev
     ports:
       - 5173:5173
     environment:
@@ -12,7 +12,7 @@ services:
 
   backend:
     build: ./backend
-    container_name: presence-dashboard-backend-dev
+    container_name: backend-dev
     ports:
       - 3000:3000
     environment:

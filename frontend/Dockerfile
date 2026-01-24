@@ -1,17 +1,14 @@
-# ベースイメージ
 FROM node:25-slim
 
-# 作業ディレクトリ
 WORKDIR /app
 
-# package.json と package-lock.json をコピー
+# Copy package.json and package-lock.json
 COPY package*.json ./
 
-# 依存関係インストール
 RUN npm install
 
-# ソースコードコピー
+# Copy project files to the Docker image
 COPY . .
 
-# Vite 開発サーバー起動
+# Run the development server
 CMD [ "npm", "run", "dev" ]
