@@ -2,7 +2,7 @@ import { useRef, useState, useEffect, useCallback } from 'react';
 import Draggable from 'react-draggable';
 import { DataGrid } from '@mui/x-data-grid';
 import type { GridColDef, GridRenderCellParams, GridRowModel } from '@mui/x-data-grid';
-import { Button, CircularProgress, Box } from '@mui/material';
+import { Button, CircularProgress, Box, Switch, FormControlLabel } from '@mui/material';
 
 // --- Types ---
 type PresenceStatus = 'present' | 'remote' | 'trip' | 'off';
@@ -31,7 +31,6 @@ type Seat = {
   user?: User;
 };
 
-// --- Constants & Helpers ---
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
 const STATUS_COLOR: Record<PresenceStatus, string> = {
@@ -53,10 +52,12 @@ function SeatItem({
   seat,
   onUpdate,
   users,
+  isEditMode, // Receive edit mode state
 }: {
   seat: Seat;
   onUpdate: (id: number, data: Partial<User>) => void;
   users: User[];
+  isEditMode: boolean;
 }) {
   const draggedRef = useRef(false);
   const nodeRef = useRef<HTMLDivElement>(null);
@@ -67,6 +68,7 @@ function SeatItem({
       nodeRef={nodeRef}
       position={{ x: seat.x, y: seat.y }}
       grid={[10, 10]}
+      disabled={!isEditMode} // Draggable only in Edit Mode
       onStart={() => {
         draggedRef.current = false;
       }}
@@ -74,14 +76,14 @@ function SeatItem({
         draggedRef.current = true;
       }}
       onStop={(_e, data) => {
-        // Position update
         onUpdate(seat.id, { x: data.x, y: data.y });
       }}
     >
       <div
         ref={nodeRef}
         onClick={() => {
-          if (draggedRef.current) return;
+          // Prevent status toggle if dragging or if in Edit Mode
+          if (draggedRef.current || isEditMode) return;
           const nextPresence = nextStatus(seat.status);
           onUpdate(seat.id, { presence: nextPresence });
         }}
@@ -95,11 +97,12 @@ function SeatItem({
           alignItems: 'center',
           justifyContent: 'center',
           fontWeight: 'bold',
-          cursor: 'pointer',
+          cursor: isEditMode ? 'move' : 'pointer', // Switch cursor based on mode
           userSelect: 'none',
           position: 'absolute',
-          boxShadow: '0 2px 6px rgba(0,0,0,0.2)',
+          boxShadow: isEditMode ? '0 0 0 2px #2196f3' : '0 2px 6px rgba(0,0,0,0.2)', // Visual border indicator for editing
           fontSize: 12,
+          zIndex: isEditMode ? 100 : 1,
         }}
       >
         {user && (
@@ -123,20 +126,23 @@ export default function App() {
   const [seats, setSeats] = useState<Seat[]>([]);
   const [loading, setLoading] = useState(true);
   const [dashboardId] = useState<number>(1);
+  const [isEditMode, setIsEditMode] = useState(false); // Edit mode state
 
-  // Initial fetch and auto-refresh
   useEffect(() => {
     fetchUsers();
-    // auto-refresh every 10 seconds
-    const interval = setInterval(fetchUsers, 10000);
+
+    // Polling is disabled in Edit Mode to prevent UI overwrites during dragging
+    let interval: any;
+    if (!isEditMode) {
+      interval = setInterval(fetchUsers, 10000);
+    }
     return () => clearInterval(interval);
-  }, [dashboardId]);
+  }, [dashboardId, isEditMode]);
 
   const fetchUsers = async () => {
     try {
       const response = await fetch(`${API_BASE_URL}/api/users/${dashboardId}`);
       if (!response.ok) throw new Error('Failed to fetch users');
-
       const data: User[] = await response.json();
       setUsers(data);
 
@@ -156,25 +162,14 @@ export default function App() {
     }
   };
 
-  // Update seat/user info
   const updateSeat = useCallback(async (id: number, data: Partial<User>) => {
     try {
       const user = users.find((u) => u.id === id);
       if (!user) return;
 
-      // Payload creation (merge current values with changes)
       const updatePayload = {
-        name: user.name,
-        presence: data.presence || user.presence,
-        note1: data.note1 !== undefined ? data.note1 : user.note1 || '',
-        note2: data.note2 !== undefined ? data.note2 : user.note2 || '',
-        check1: user.check1 || false,
-        check2: user.check2 || false,
-        x: data.x !== undefined ? data.x : user.x,
-        y: data.y !== undefined ? data.y : user.y,
-        team: user.team,
-        order: user.order,
-        dashboard_id: user.dashboard_id
+        ...user,
+        ...data,
       };
 
       const response = await fetch(`${API_BASE_URL}/api/users/${id}`, {
@@ -185,9 +180,9 @@ export default function App() {
 
       if (!response.ok) throw new Error('Failed to update user');
 
-      // Update local state
+      // Optimistic updates for smoother UI experience
       setUsers((prev) =>
-        prev.map((u) => (u.id === id ? { ...u, ...updatePayload } : u))
+        prev.map((u) => (u.id === id ? { ...u, ...data } : u))
       );
 
       setSeats((prev) =>
@@ -195,25 +190,20 @@ export default function App() {
           seat.id === id
             ? {
               ...seat,
-              x: updatePayload.x,
-              y: updatePayload.y,
-              status: updatePayload.presence as PresenceStatus,
+              x: data.x !== undefined ? data.x : seat.x,
+              y: data.y !== undefined ? data.y : seat.y,
+              status: (data.presence as PresenceStatus) || seat.status,
             }
             : seat
         )
       );
-
-      return updatePayload;
     } catch (error) {
       console.error('Error updating seat:', error);
-      fetchUsers(); // Refresh data on error
-      throw error;
+      fetchUsers(); // Rollback/Sync with server on error
     }
   }, [users]);
 
-  // DataGrid row update handler
   const handleProcessRowUpdate = async (newRow: GridRowModel) => {
-    // Update note1 and note2
     await updateSeat(newRow.id as number, {
       note1: newRow.note1,
       note2: newRow.note2,
@@ -222,7 +212,6 @@ export default function App() {
   };
 
   const columns: GridColDef[] = [
-    // { field: 'id', headerName: 'ID', width: 10 },
     { field: 'team', headerName: 'Team', width: 120 },
     { field: 'name', headerName: 'Name', width: 120 },
     {
@@ -234,6 +223,7 @@ export default function App() {
         <Button
           size='small'
           variant='contained'
+          disabled={isEditMode} // Disable status changes from grid during Edit Mode
           onClick={() => {
             const nextPresence = nextStatus(params.row.presence as PresenceStatus);
             updateSeat(params.row.id as number, { presence: nextPresence });
@@ -247,8 +237,8 @@ export default function App() {
             boxShadow: 'none',
             textTransform: 'capitalize',
             '&:hover': {
-              opacity: 0.8,
               backgroundColor: STATUS_COLOR[params.row.presence as PresenceStatus],
+              opacity: 0.8,
             },
           }}
         >
@@ -269,18 +259,23 @@ export default function App() {
   }
 
   return (
-    <div
-      style={{
-        display: 'flex',
-        width: '100vw',
-        height: '100vh',
-        backgroundColor: '#f5f5f5',
-        flexDirection: 'column',
-      }}
-    >
+    <div style={{ display: 'flex', width: '100vw', height: '100vh', backgroundColor: '#f5f5f5', flexDirection: 'column' }}>
       {/* Header */}
-      <div style={{ padding: '10px', backgroundColor: '#fff', borderBottom: '1px solid #ddd' }}>
-        <h1 style={{ margin: '0 0 0 0', fontSize: '24px', color: '#333' }}>Presence Dashboard</h1>
+      <div style={{ padding: '10px 20px', backgroundColor: '#fff', borderBottom: '1px solid #ddd', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <h1 style={{ margin: 0, fontSize: '24px', color: '#333' }}>Presence Dashboard</h1>
+
+        {/* Mode Toggle Switch */}
+        <FormControlLabel
+          labelPlacement='start'
+          label={isEditMode ? "Edit Mode (Drag to Move)" : "View Mode"}
+          control={
+            <Switch
+              checked={isEditMode}
+              onChange={(e) => setIsEditMode(e.target.checked)}
+              color="primary"
+            />
+          }
+        />
       </div>
 
       {/* Content */}
@@ -292,6 +287,9 @@ export default function App() {
             position: 'relative',
             overflow: 'hidden',
             borderRight: '1px solid #ddd',
+            // Show grid dots only in Edit Mode
+            backgroundImage: isEditMode ? 'radial-gradient(#ddd 1px, transparent 1px)' : 'none',
+            backgroundSize: '20px 20px',
           }}
         >
           {seats.map((seat) => (
@@ -300,32 +298,22 @@ export default function App() {
               seat={seat}
               onUpdate={updateSeat}
               users={users}
+              isEditMode={isEditMode}
             />
           ))}
         </div>
 
         {/* Right side: Data Grid */}
-        <div
-          style={{
-            width: '67vw',
-            height: '100%',
-            backgroundColor: '#fff',
-            overflowY: 'auto',
-          }}
-        >
+        <div style={{ width: '67vw', height: '100%', backgroundColor: '#fff' }}>
           <DataGrid
             rows={users}
             columns={columns}
-            columnHeaderHeight={30}
-            rowHeight={30}
+            columnHeaderHeight={35}
+            rowHeight={35}
             processRowUpdate={handleProcessRowUpdate}
             onProcessRowUpdateError={(err) => console.error(err)}
             hideFooter
-            sx={{
-              border: 'none',
-              height: '100%',
-              '& .MuiDataGrid-main': { overflow: 'hidden' }
-            }}
+            sx={{ border: 'none', height: '100%' }}
           />
         </div>
       </div>
