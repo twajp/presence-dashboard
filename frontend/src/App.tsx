@@ -122,6 +122,14 @@ export default function App() {
   const [loading, setLoading] = useState(true);
   const [isEditMode, setIsEditMode] = useState(false);
 
+  const [headers, setHeaders] = useState({
+    team_label: 'Team',
+    name_label: 'Name',
+    note1_label: 'Note 1',
+    note2_label: 'Note 2'
+  });
+  const [editingHeader, setEditingHeader] = useState<string | null>(null);
+
   const [openAdd, setOpenAdd] = useState(false);
   const [openAddDb, setOpenAddDb] = useState(false);
   const [presenceTarget, setPresenceTarget] = useState<User | null>(null);
@@ -140,12 +148,25 @@ export default function App() {
     } catch (err) { console.error("Failed to fetch dashboards", err); }
   }, [dashboardId]);
 
+  const fetchHeaderLabels = useCallback(async () => {
+    if (dashboardId === '') return;
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/columns/${dashboardId}`);
+      const data = await res.json();
+      setHeaders({
+        team_label: data.team_label || 'Team',
+        name_label: data.name_label || 'Name',
+        note1_label: data.note1_label || 'Note 1',
+        note2_label: data.note2_label || 'Note 2'
+      });
+    } catch (err) { console.error(err); }
+  }, [dashboardId]);
+
   const fetchUsers = useCallback(async () => {
     if (dashboardId === '') return;
     try {
       const response = await fetch(`${API_BASE_URL}/api/users/${dashboardId}`);
       const data: User[] = await response.json();
-      // Ensure data is sorted by order
       const sortedData = [...data].sort((a, b) => a.order - b.order);
       setUsers(sortedData);
       setSeats(sortedData.map(u => ({ id: u.id, x: u.x || 0, y: u.y || 0, status: u.presence, userId: u.id })));
@@ -157,10 +178,11 @@ export default function App() {
   useEffect(() => {
     if (dashboardId !== '') {
       fetchUsers();
+      fetchHeaderLabels();
       let interval = !isEditMode ? setInterval(fetchUsers, 10000) : undefined;
       return () => clearInterval(interval);
     }
-  }, [fetchUsers, isEditMode, dashboardId]);
+  }, [fetchUsers, fetchHeaderLabels, isEditMode, dashboardId]);
 
   const updateSeat = useCallback(async (id: number, data: Partial<User>) => {
     const user = users.find((u) => u.id === id);
@@ -177,28 +199,32 @@ export default function App() {
     setSeats(prev => prev.map(s => s.id === id ? { ...s, status: data.presence || s.status, x: data.x ?? s.x, y: data.y ?? s.y } : s));
   }, [users]);
 
+  const saveHeader = async (newHeaders: typeof headers) => {
+    if (dashboardId === '') return;
+    await fetch(`${API_BASE_URL}/api/columns/${dashboardId}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(newHeaders),
+    });
+    setEditingHeader(null);
+  };
+
   const handleMove = async (index: number, direction: 'up' | 'down') => {
     const targetIndex = direction === 'up' ? index - 1 : index + 1;
     if (targetIndex < 0 || targetIndex >= users.length) return;
-
     const currentItem = { ...users[index] };
     const targetItem = { ...users[targetIndex] };
-
-    // Swap order values
     const tempOrder = currentItem.order;
     currentItem.order = targetItem.order;
     targetItem.order = tempOrder;
-
-    // Persist both to DB
     await Promise.all([
       updateSeat(currentItem.id, { order: currentItem.order }),
       updateSeat(targetItem.id, { order: targetItem.order })
     ]);
-    fetchUsers(); // Refresh list to ensure order is correct
+    fetchUsers();
   };
 
   const handleAddMember = async () => {
-    // New members get the highest order + 1
     const maxOrder = users.length > 0 ? Math.max(...users.map(u => u.order)) : 0;
     const payload = { ...newUser, presence: 'present', dashboard_id: dashboardId, x: 0, y: 0, order: maxOrder + 1 };
     await fetch(`${API_BASE_URL}/api/users`, {
@@ -231,11 +257,54 @@ export default function App() {
     }
   };
 
+  const EditableHeader = ({ label, fieldKey }: { label: string, fieldKey: keyof typeof headers }) => {
+    const [tempValue, setTempValue] = useState(label);
+    if (isEditMode && editingHeader === fieldKey) {
+      return (
+        <TextField
+          variant="standard"
+          autoFocus
+          value={tempValue}
+          onChange={(e) => setTempValue(e.target.value)}
+          onBlur={() => {
+            const next = { ...headers, [fieldKey]: tempValue };
+            setHeaders(next);
+            saveHeader(next);
+          }}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') {
+              const next = { ...headers, [fieldKey]: tempValue };
+              setHeaders(next);
+              saveHeader(next);
+            }
+          }}
+          sx={{ input: { fontSize: '0.875rem', fontWeight: 'bold' } }}
+        />
+      );
+    }
+    return (
+      <Box
+        sx={{ cursor: isEditMode ? 'pointer' : 'inherit', width: '100%' }}
+        onClick={() => isEditMode && setEditingHeader(fieldKey)}
+      >
+        {label}
+      </Box>
+    );
+  };
+
   const columns: GridColDef[] = [
-    { field: 'team', headerName: 'Team', width: 120, editable: isEditMode },
-    { field: 'name', headerName: 'Name', width: 120, editable: isEditMode },
     {
-      field: 'presence', headerName: 'Status', width: 100,
+      field: 'team', headerName: headers.team_label, width: 120,
+      editable: isEditMode, sortable: false, disableColumnMenu: true,
+      renderHeader: () => <EditableHeader label={headers.team_label} fieldKey="team_label" />
+    },
+    {
+      field: 'name', headerName: headers.name_label, width: 120,
+      editable: isEditMode, sortable: false, disableColumnMenu: true,
+      renderHeader: () => <EditableHeader label={headers.name_label} fieldKey="name_label" />
+    },
+    {
+      field: 'presence', headerName: 'Status', width: 100, sortable: false, disableColumnMenu: true,
       renderCell: (p) => (
         <Button size='small' variant='contained' disabled={isEditMode}
           onClick={() => setPresenceTarget(p.row as User)}
@@ -248,10 +317,18 @@ export default function App() {
         > {p.row.presence} </Button>
       ),
     },
-    { field: 'note1', headerName: 'Note 1', flex: 1, editable: true },
-    { field: 'note2', headerName: 'Note 2', flex: 1, editable: true },
+    {
+      field: 'note1', headerName: headers.note1_label, flex: 1,
+      editable: true, sortable: false, disableColumnMenu: true,
+      renderHeader: () => <EditableHeader label={headers.note1_label} fieldKey="note1_label" />
+    },
+    {
+      field: 'note2', headerName: headers.note2_label, flex: 1,
+      editable: true, sortable: false, disableColumnMenu: true,
+      renderHeader: () => <EditableHeader label={headers.note2_label} fieldKey="note2_label" />
+    },
     ...(isEditMode ? [{
-      field: 'actions', headerName: 'Actions', width: 140,
+      field: 'actions', headerName: 'Actions', width: 140, sortable: false, disableColumnMenu: true,
       renderCell: (p: any) => {
         const index = users.findIndex(u => u.id === p.row.id);
         return (
@@ -300,7 +377,7 @@ export default function App() {
 
           <Box display="flex" gap={2}>
             {isEditMode && <Button startIcon={<AddIcon />} variant="contained" onClick={() => setOpenAdd(true)}>Add Member</Button>}
-            <FormControlLabel control={<Switch checked={isEditMode} onChange={(e) => setIsEditMode(e.target.checked)} />} label={isEditMode ? "Edit Mode" : "View Mode"} />
+            <FormControlLabel control={<Switch checked={isEditMode} onChange={(e) => { setIsEditMode(e.target.checked); setEditingHeader(null); }} />} label={isEditMode ? "Edit Mode" : "View Mode"} />
           </Box>
         </Box>
 

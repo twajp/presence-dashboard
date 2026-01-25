@@ -1,6 +1,10 @@
 CREATE TABLE IF NOT EXISTS dashboard_settings (
     id INT AUTO_INCREMENT PRIMARY KEY,
-    dashboard_name VARCHAR(50) CHARACTER SET utf8
+    dashboard_name VARCHAR(50) CHARACTER SET utf8,
+    team_label VARCHAR(50) CHARACTER SET utf8 DEFAULT 'Team',
+    name_label VARCHAR(50) CHARACTER SET utf8 DEFAULT 'Name',
+    note1_label VARCHAR(50) CHARACTER SET utf8 DEFAULT 'Note 1',
+    note2_label VARCHAR(50) CHARACTER SET utf8 DEFAULT 'Note 2'
 );
 
 CREATE TABLE IF NOT EXISTS user (
