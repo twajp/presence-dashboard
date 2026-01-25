@@ -33,6 +33,15 @@ let connection: any;
         res.json({ success: true, id: (result as any).insertId });
     });
 
+    app.put('/api/dashboards/:id', async (req, res) => {
+        const { dashboard_name } = req.body;
+        await connection.execute(
+            'UPDATE dashboard_settings SET dashboard_name = ? WHERE id = ?',
+            [dashboard_name, req.params.id]
+        );
+        res.json({ success: true });
+    });
+
     app.get('/api/columns/:dashboardId', async (req, res) => {
         const [rows]: any = await connection.execute('SELECT * FROM dashboard_settings WHERE id = ?', [req.params.dashboardId]);
         res.json(rows[0] || { team_label: 'Team', name_label: 'Name', note1_label: 'Note 1', note2_label: 'Note 2' });
@@ -79,6 +88,7 @@ let connection: any;
         console.log(`✅ Server running on http://localhost:${PORT}`);
         console.log(`📊 GET /api/dashboards - Get dashboard list`);
         console.log(`➕ POST /api/dashboards - Create dashboard`);
+        console.log(`✏️  PUT /api/dashboards/:id - Update dashboard`);
         console.log(`📋 GET /api/columns/:dashboardId - Get dashboard columns`);
         console.log(`✏️  PUT /api/columns/:dashboardId - Update dashboard columns`);
         console.log(`👥 GET /api/users - Get user list`);

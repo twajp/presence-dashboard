@@ -6,13 +6,14 @@ import {
   Button, CircularProgress, Box, Switch, FormControlLabel, ThemeProvider,
   createTheme, CssBaseline, useMediaQuery, Select, MenuItem, FormControl,
   InputLabel, Typography, IconButton, Dialog, DialogTitle, DialogContent,
-  TextField, DialogActions, Stack
+  TextField, DialogActions, Stack, Tooltip
 } from '@mui/material';
 import DeleteIcon from '@mui/icons-material/Delete';
 import AddIcon from '@mui/icons-material/Add';
 import ArrowUpwardIcon from '@mui/icons-material/ArrowUpward';
 import ArrowDownwardIcon from '@mui/icons-material/ArrowDownward';
 import DashboardCustomizeIcon from '@mui/icons-material/DashboardCustomize';
+import SettingsIcon from '@mui/icons-material/Settings';
 
 type PresenceStatus = 'present' | 'remote' | 'trip' | 'off';
 type Dashboard = { id: number; dashboard_name: string; };
@@ -132,10 +133,12 @@ export default function App() {
 
   const [openAdd, setOpenAdd] = useState(false);
   const [openAddDb, setOpenAddDb] = useState(false);
+  const [openDbSettings, setOpenDbSettings] = useState(false);
   const [presenceTarget, setPresenceTarget] = useState<User | null>(null);
 
   const [newUser, setNewUser] = useState({ name: '', team: '' });
   const [newDbName, setNewDbName] = useState('');
+  const [editDbName, setEditDbName] = useState('');
 
   const fetchDashboards = useCallback(async () => {
     try {
@@ -257,6 +260,16 @@ export default function App() {
     }
   };
 
+  const handleUpdateDashboard = async () => {
+    if (dashboardId === '') return;
+    await fetch(`${API_BASE_URL}/api/dashboards/${dashboardId}`, {
+      method: 'PUT', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ dashboard_name: editDbName }),
+    });
+    setOpenDbSettings(false);
+    fetchDashboards();
+  };
+
   const EditableHeader = ({ label, fieldKey }: { label: string, fieldKey: keyof typeof headers }) => {
     const [tempValue, setTempValue] = useState(label);
     if (isEditMode && editingHeader === fieldKey) {
@@ -348,14 +361,16 @@ export default function App() {
     }] : [])
   ];
 
+  const currentDashboardName = dashboards.find(d => d.id === dashboardId)?.dashboard_name || '';
+
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
       <Box display="flex" flexDirection="column" width="100vw" height="100vh">
         <Box px={3} py={1} display="flex" alignItems="center" bgcolor="background.paper" borderBottom={1} borderColor="divider" sx={{ height: '64px' }}>
-          <Typography variant="h6" fontWeight="bold">Presence Dashboard</Typography>
+          <Typography variant="h6" fontWeight="bold" sx={{ display: { xs: 'none', md: 'block' } }}>Presence Dashboard</Typography>
 
-          <Box sx={{ flex: 1, display: 'flex', justifyContent: 'center', gap: 1 }}>
+          <Box sx={{ flex: 1, display: 'flex', justifyContent: 'center', gap: 1, alignItems: 'center' }}>
             <FormControl size="small" sx={{ minWidth: 200 }}>
               <InputLabel id="db-select-label">Select Dashboard</InputLabel>
               <Select
@@ -372,7 +387,21 @@ export default function App() {
                 {dashboards.map(db => <MenuItem key={db.id} value={db.id}>{db.dashboard_name}</MenuItem>)}
               </Select>
             </FormControl>
-            <IconButton color="primary" onClick={() => setOpenAddDb(true)}><DashboardCustomizeIcon /></IconButton>
+
+            <Tooltip title="Add Dashboard">
+              <IconButton color="primary" onClick={() => setOpenAddDb(true)}><DashboardCustomizeIcon /></IconButton>
+            </Tooltip>
+
+            {isEditMode && dashboardId !== '' && (
+              <Tooltip title="Dashboard Settings">
+                <IconButton color="secondary" onClick={() => {
+                  setEditDbName(currentDashboardName);
+                  setOpenDbSettings(true);
+                }}>
+                  <SettingsIcon />
+                </IconButton>
+              </Tooltip>
+            )}
           </Box>
 
           <Box display="flex" gap={2}>
@@ -403,6 +432,7 @@ export default function App() {
 
         <PresenceDialog open={!!presenceTarget} onClose={() => setPresenceTarget(null)} currentStatus={presenceTarget?.presence} onSelect={(status) => presenceTarget && updateSeat(presenceTarget.id, { presence: status })} />
 
+        {/* Add Member Dialog */}
         <Dialog open={openAdd} onClose={() => setOpenAdd(false)}>
           <DialogTitle>Add New Member</DialogTitle>
           <DialogContent><Box display="flex" flexDirection="column" gap={2} pt={1}>
@@ -412,10 +442,33 @@ export default function App() {
           <DialogActions><Button onClick={() => setOpenAdd(false)}>Cancel</Button><Button onClick={handleAddMember} variant="contained">Add</Button></DialogActions>
         </Dialog>
 
+        {/* Dashboard Dialog */}
         <Dialog open={openAddDb} onClose={() => setOpenAddDb(false)}>
           <DialogTitle>New Dashboard</DialogTitle>
           <DialogContent><Box pt={1}><TextField label="Dashboard Name" fullWidth autoFocus value={newDbName} onChange={e => setNewDbName(e.target.value)} /></Box></DialogContent>
           <DialogActions><Button onClick={() => setOpenAddDb(false)}>Cancel</Button><Button onClick={handleAddDashboard} variant="contained" disabled={!newDbName}>Create</Button></DialogActions>
+        </Dialog>
+
+        {/* Edit Dashboard Settings Dialog */}
+        <Dialog open={openDbSettings} onClose={() => setOpenDbSettings(false)}>
+          <DialogTitle>Dashboard Settings</DialogTitle>
+          <DialogContent>
+            <Box pt={1}>
+              <TextField
+                label="Dashboard Name"
+                fullWidth
+                autoFocus
+                value={editDbName}
+                onChange={e => setEditDbName(e.target.value)}
+              />
+            </Box>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={() => setOpenDbSettings(false)}>Cancel</Button>
+            <Button onClick={handleUpdateDashboard} variant="contained" color="primary" disabled={!editDbName}>
+              Save Changes
+            </Button>
+          </DialogActions>
         </Dialog>
       </Box>
     </ThemeProvider>
