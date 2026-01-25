@@ -1,10 +1,20 @@
-import { useRef, useState, useEffect, useCallback } from 'react';
+import { useRef, useState, useEffect, useCallback, useMemo } from 'react';
 import Draggable from 'react-draggable';
 import { DataGrid } from '@mui/x-data-grid';
 import type { GridColDef, GridRenderCellParams, GridRowModel } from '@mui/x-data-grid';
-import { Button, CircularProgress, Box, Switch, FormControlLabel } from '@mui/material';
+import {
+  Button,
+  CircularProgress,
+  Box,
+  Switch,
+  FormControlLabel,
+  ThemeProvider,
+  createTheme,
+  CssBaseline,
+  useMediaQuery
+} from '@mui/material';
 
-// --- Types ---
+// --- 1. Type Definitions ---
 type PresenceStatus = 'present' | 'remote' | 'trip' | 'off';
 
 type User = {
@@ -31,28 +41,32 @@ type Seat = {
   user?: User;
 };
 
+// --- 2. Constants and Helper Functions ---
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
 const STATUS_COLOR: Record<PresenceStatus, string> = {
   present: '#4caf50',
   remote: '#2196f3',
   trip: '#ffc107',
-  off: '#e0e0e0',
+  off: '#9e9e9e',
 };
 
 const STATUS_ORDER: PresenceStatus[] = ['present', 'remote', 'trip', 'off'];
 
+/**
+ * Cycles through the presence statuses in order
+ */
 const nextStatus = (status: PresenceStatus): PresenceStatus => {
   const index = STATUS_ORDER.indexOf(status);
   return STATUS_ORDER[(index + 1) % STATUS_ORDER.length];
 };
 
-// --- Seat Component ---
+// --- 3. Seat Component (SeatItem) ---
 function SeatItem({
   seat,
   onUpdate,
   users,
-  isEditMode, // Receive edit mode state
+  isEditMode,
 }: {
   seat: Seat;
   onUpdate: (id: number, data: Partial<User>) => void;
@@ -68,21 +82,15 @@ function SeatItem({
       nodeRef={nodeRef}
       position={{ x: seat.x, y: seat.y }}
       grid={[10, 10]}
-      disabled={!isEditMode} // Draggable only in Edit Mode
-      onStart={() => {
-        draggedRef.current = false;
-      }}
-      onDrag={() => {
-        draggedRef.current = true;
-      }}
-      onStop={(_e, data) => {
-        onUpdate(seat.id, { x: data.x, y: data.y });
-      }}
+      disabled={!isEditMode}
+      onStart={() => { draggedRef.current = false; }}
+      onDrag={() => { draggedRef.current = true; }}
+      onStop={(_e, data) => { onUpdate(seat.id, { x: data.x, y: data.y }); }}
     >
       <div
         ref={nodeRef}
         onClick={() => {
-          // Prevent status toggle if dragging or if in Edit Mode
+          // Prevent status change if the item was dragged or if we are in edit mode
           if (draggedRef.current || isEditMode) return;
           const nextPresence = nextStatus(seat.status);
           onUpdate(seat.id, { presence: nextPresence });
@@ -90,56 +98,54 @@ function SeatItem({
         style={{
           width: 100,
           height: 50,
-          borderRadius: 0,
           backgroundColor: STATUS_COLOR[seat.status],
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
           justifyContent: 'center',
           fontWeight: 'bold',
-          cursor: isEditMode ? 'move' : 'pointer', // Switch cursor based on mode
+          cursor: isEditMode ? 'move' : 'pointer',
           userSelect: 'none',
           position: 'absolute',
-          boxShadow: isEditMode ? '0 0 0 2px #2196f3' : '0 2px 6px rgba(0,0,0,0.2)', // Visual border indicator for editing
+          outline: isEditMode ? '2px solid #2196f3' : 'none',
+          boxShadow: '0 2px 6px rgba(0,0,0,0.3)',
           fontSize: 12,
           zIndex: isEditMode ? 100 : 1,
+          color: '#fff',
         }}
       >
-        {user && (
-          <div
-            style={{
-              fontSize: 16,
-              color: seat.status === 'off' ? '#333' : '#fff',
-            }}
-          >
-            {user.name}
-          </div>
-        )}
+        {user && <div style={{ fontSize: 16 }}>{user.name}</div>}
       </div>
     </Draggable>
   );
 }
 
-// --- Main App Component ---
+// --- 4. Main Application (App) ---
 export default function App() {
+  // Detect system dark mode preference
+  const prefersDarkMode = useMediaQuery('(prefers-color-scheme: dark)');
+
+  // Create MUI theme based on system preference
+  const theme = useMemo(
+    () =>
+      createTheme({
+        palette: {
+          mode: prefersDarkMode ? 'dark' : 'light',
+        },
+      }),
+    [prefersDarkMode]
+  );
+
   const [users, setUsers] = useState<User[]>([]);
   const [seats, setSeats] = useState<Seat[]>([]);
   const [loading, setLoading] = useState(true);
   const [dashboardId] = useState<number>(1);
-  const [isEditMode, setIsEditMode] = useState(false); // Edit mode state
+  const [isEditMode, setIsEditMode] = useState(false);
 
-  useEffect(() => {
-    fetchUsers();
-
-    // Polling is disabled in Edit Mode to prevent UI overwrites during dragging
-    let interval: any;
-    if (!isEditMode) {
-      interval = setInterval(fetchUsers, 10000);
-    }
-    return () => clearInterval(interval);
-  }, [dashboardId, isEditMode]);
-
-  const fetchUsers = async () => {
+  /**
+   * Fetches user data and initializes seat positions
+   */
+  const fetchUsers = useCallback(async () => {
     try {
       const response = await fetch(`${API_BASE_URL}/api/users/${dashboardId}`);
       if (!response.ok) throw new Error('Failed to fetch users');
@@ -160,31 +166,38 @@ export default function App() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [dashboardId]);
 
+  /**
+   * Initial fetch and polling setup
+   * Polling is disabled while in Edit Mode to prevent UI jumps
+   */
+  useEffect(() => {
+    fetchUsers();
+    let interval: any;
+    if (!isEditMode) {
+      interval = setInterval(fetchUsers, 10000);
+    }
+    return () => clearInterval(interval);
+  }, [fetchUsers, isEditMode]);
+
+  /**
+   * Updates user data on the server and performs an optimistic UI update
+   */
   const updateSeat = useCallback(async (id: number, data: Partial<User>) => {
     try {
       const user = users.find((u) => u.id === id);
       if (!user) return;
 
-      const updatePayload = {
-        ...user,
-        ...data,
-      };
-
-      const response = await fetch(`${API_BASE_URL}/api/users/${id}`, {
+      const updatePayload = { ...user, ...data };
+      await fetch(`${API_BASE_URL}/api/users/${id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(updatePayload),
       });
 
-      if (!response.ok) throw new Error('Failed to update user');
-
-      // Optimistic updates for smoother UI experience
-      setUsers((prev) =>
-        prev.map((u) => (u.id === id ? { ...u, ...data } : u))
-      );
-
+      // Optimistic Updates
+      setUsers((prev) => prev.map((u) => (u.id === id ? { ...u, ...data } : u)));
       setSeats((prev) =>
         prev.map((seat) =>
           seat.id === id
@@ -199,10 +212,13 @@ export default function App() {
       );
     } catch (error) {
       console.error('Error updating seat:', error);
-      fetchUsers(); // Rollback/Sync with server on error
+      fetchUsers(); // Revert on error
     }
-  }, [users]);
+  }, [users, fetchUsers]);
 
+  /**
+   * Handles cell editing in the DataGrid
+   */
   const handleProcessRowUpdate = async (newRow: GridRowModel) => {
     await updateSeat(newRow.id as number, {
       note1: newRow.note1,
@@ -218,27 +234,23 @@ export default function App() {
       field: 'presence',
       headerName: 'Status',
       width: 100,
-      display: 'flex',
       renderCell: (params: GridRenderCellParams) => (
         <Button
           size='small'
           variant='contained'
-          disabled={isEditMode} // Disable status changes from grid during Edit Mode
+          disabled={isEditMode}
           onClick={() => {
             const nextPresence = nextStatus(params.row.presence as PresenceStatus);
             updateSeat(params.row.id as number, { presence: nextPresence });
           }}
           sx={{
-            height: '100%',
+            height: '30px',
             width: '100%',
-            borderRadius: 0,
             backgroundColor: STATUS_COLOR[params.row.presence as PresenceStatus],
-            color: params.row.presence === 'off' ? '#333' : '#fff',
-            boxShadow: 'none',
-            textTransform: 'capitalize',
+            color: '#fff',
             '&:hover': {
-              backgroundColor: STATUS_COLOR[params.row.presence as PresenceStatus],
               opacity: 0.8,
+              backgroundColor: STATUS_COLOR[params.row.presence as PresenceStatus]
             },
           }}
         >
@@ -259,64 +271,60 @@ export default function App() {
   }
 
   return (
-    <div style={{ display: 'flex', width: '100vw', height: '100vh', backgroundColor: '#f5f5f5', flexDirection: 'column' }}>
-      {/* Header */}
-      <div style={{ padding: '10px 20px', backgroundColor: '#fff', borderBottom: '1px solid #ddd', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <h1 style={{ margin: 0, fontSize: '24px', color: '#333' }}>Presence Dashboard</h1>
+    <ThemeProvider theme={theme}>
+      <CssBaseline />
+      <div style={{ display: 'flex', width: '100vw', height: '100vh', flexDirection: 'column' }}>
 
-        {/* Mode Toggle Switch */}
-        <FormControlLabel
-          labelPlacement='start'
-          label={isEditMode ? "Edit Mode (Drag to Move)" : "View Mode"}
-          control={
-            <Switch
-              checked={isEditMode}
-              onChange={(e) => setIsEditMode(e.target.checked)}
-              color="primary"
-            />
-          }
-        />
-      </div>
-
-      {/* Content */}
-      <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
-        {/* Left side: Seat layout */}
-        <div
-          style={{
-            flex: 1,
-            position: 'relative',
-            overflow: 'hidden',
-            borderRight: '1px solid #ddd',
-            // Show grid dots only in Edit Mode
-            backgroundImage: isEditMode ? 'radial-gradient(#ddd 1px, transparent 1px)' : 'none',
-            backgroundSize: '20px 20px',
-          }}
-        >
-          {seats.map((seat) => (
-            <SeatItem
-              key={seat.id}
-              seat={seat}
-              onUpdate={updateSeat}
-              users={users}
-              isEditMode={isEditMode}
-            />
-          ))}
-        </div>
-
-        {/* Right side: Data Grid */}
-        <div style={{ width: '67vw', height: '100%', backgroundColor: '#fff' }}>
-          <DataGrid
-            rows={users}
-            columns={columns}
-            columnHeaderHeight={35}
-            rowHeight={35}
-            processRowUpdate={handleProcessRowUpdate}
-            onProcessRowUpdateError={(err) => console.error(err)}
-            hideFooter
-            sx={{ border: 'none', height: '100%' }}
+        {/* Header */}
+        <div style={{
+          padding: '10px 20px',
+          backgroundColor: theme.palette.background.paper,
+          borderBottom: `1px solid ${theme.palette.divider}`,
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center'
+        }}>
+          <h1 style={{ margin: 0, fontSize: '20px' }}>Presence Dashboard</h1>
+          <FormControlLabel
+            label={isEditMode ? "Edit Mode" : "View Mode"}
+            control={<Switch checked={isEditMode} onChange={(e) => setIsEditMode(e.target.checked)} />}
           />
         </div>
+
+        {/* Main Content Area */}
+        <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
+
+          {/* Floor Map Section */}
+          <div style={{
+            flex: 1,
+            position: 'relative',
+            // Show grid dots when in edit mode
+            backgroundImage: isEditMode ? `radial-gradient(${theme.palette.divider} 1px, transparent 1px)` : 'none',
+            backgroundSize: '20px 20px',
+          }}>
+            {seats.map((seat) => (
+              <SeatItem
+                key={seat.id}
+                seat={seat}
+                onUpdate={updateSeat}
+                users={users}
+                isEditMode={isEditMode}
+              />
+            ))}
+          </div>
+
+          {/* List/DataGrid Section */}
+          <div style={{ width: '67vw', borderLeft: `1px solid ${theme.palette.divider}` }}>
+            <DataGrid
+              rows={users}
+              columns={columns}
+              processRowUpdate={handleProcessRowUpdate}
+              hideFooter
+              sx={{ border: 'none' }}
+            />
+          </div>
+        </div>
       </div>
-    </div>
+    </ThemeProvider>
   );
 }
