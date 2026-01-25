@@ -22,6 +22,10 @@ let connection: any;
         database: process.env.DB_NAME || 'database-dev',
     });
 
+    app.get('/health', (req, res) => {
+        res.send('OK');
+    });
+
     app.get('/api/dashboards', async (req, res) => {
         const [rows] = await connection.execute('SELECT * FROM dashboard_settings');
         res.json(rows);

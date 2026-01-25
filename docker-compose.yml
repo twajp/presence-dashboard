@@ -9,6 +9,9 @@ services:
     volumes:
       - ./frontend:/app
     command: npm run dev -- --host 0.0.0.0
+    depends_on:
+      backend:
+        condition: service_healthy
 
   backend:
     build: ./backend
@@ -20,6 +23,11 @@ services:
     volumes:
       - ./backend:/app
     command: npm run dev
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://localhost:3000/health').then(r => r.ok ? process.exit(0) : process.exit(1))"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
     depends_on:
       database:
         condition: service_healthy
