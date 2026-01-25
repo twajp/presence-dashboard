@@ -280,7 +280,7 @@ export default function App() {
     >
       {/* Header */}
       <div style={{ padding: '10px', backgroundColor: '#fff', borderBottom: '1px solid #ddd' }}>
-        <h1 style={{ margin: '0 0 10px 0', fontSize: '24px' }}>Presence Dashboard</h1>
+        <h1 style={{ margin: '0 0 0 0', fontSize: '24px', color: '#333' }}>Presence Dashboard</h1>
       </div>
 
       {/* Content */}
