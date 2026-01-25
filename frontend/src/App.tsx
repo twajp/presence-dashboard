@@ -1,74 +1,38 @@
 import { useRef, useState, useEffect, useCallback, useMemo } from 'react';
 import Draggable from 'react-draggable';
 import { DataGrid } from '@mui/x-data-grid';
-import type { GridColDef, GridRenderCellParams } from '@mui/x-data-grid';
+import type { GridColDef } from '@mui/x-data-grid';
 import {
-  Button,
-  CircularProgress,
-  Box,
-  Switch,
-  FormControlLabel,
-  ThemeProvider,
-  createTheme,
-  CssBaseline,
-  useMediaQuery,
-  Select,
-  MenuItem,
-  FormControl,
-  InputLabel,
-  Typography
+  Button, CircularProgress, Box, Switch, FormControlLabel, ThemeProvider,
+  createTheme, CssBaseline, useMediaQuery, Select, MenuItem, FormControl,
+  InputLabel, Typography, IconButton, Dialog, DialogTitle, DialogContent,
+  TextField, DialogActions
 } from '@mui/material';
+import DeleteIcon from '@mui/icons-material/Delete';
+import AddIcon from '@mui/icons-material/Add';
 
-// --- 1. Type Definitions ---
 type PresenceStatus = 'present' | 'remote' | 'trip' | 'off';
-
-type Dashboard = {
-  id: number;
-  dashboard_name: string;
-};
-
+type Dashboard = { id: number; dashboard_name: string; };
 type User = {
-  id: number;
-  name: string;
-  presence: PresenceStatus;
-  note1?: string;
-  note2?: string;
-  x: number;
-  y: number;
-  team?: string;
-  dashboard_id?: number;
+  id: number; name: string; presence: PresenceStatus;
+  note1?: string; note2?: string; x: number; y: number;
+  team?: string; dashboard_id?: number;
 };
+type Seat = { id: number; x: number; y: number; status: PresenceStatus; userId?: number; };
 
-type Seat = {
-  id: number;
-  x: number;
-  y: number;
-  status: PresenceStatus;
-  userId?: number;
-};
-
-// --- 2. Constants and Helpers ---
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
-
 const STATUS_COLOR: Record<PresenceStatus, string> = {
-  present: '#4caf50',
-  remote: '#2196f3',
-  trip: '#ffc107',
-  off: '#9e9e9e',
+  present: '#4caf50', remote: '#2196f3', trip: '#ffc107', off: '#9e9e9e',
 };
-
 const STATUS_ORDER: PresenceStatus[] = ['present', 'remote', 'trip', 'off'];
 const nextStatus = (status: PresenceStatus): PresenceStatus => {
   const index = STATUS_ORDER.indexOf(status);
   return STATUS_ORDER[(index + 1) % STATUS_ORDER.length];
 };
 
-// --- 3. Seat Component ---
 function SeatItem({ seat, onUpdate, users, isEditMode }: {
-  seat: Seat;
-  onUpdate: (id: number, data: Partial<User>) => void;
-  users: User[];
-  isEditMode: boolean;
+  seat: Seat; onUpdate: (id: number, data: Partial<User>) => void;
+  users: User[]; isEditMode: boolean;
 }) {
   const draggedRef = useRef(false);
   const nodeRef = useRef<HTMLDivElement>(null);
@@ -91,69 +55,46 @@ function SeatItem({ seat, onUpdate, users, isEditMode }: {
           onUpdate(seat.id, { presence: nextStatus(seat.status) });
         }}
         style={{
-          width: 100, height: 50,
-          backgroundColor: STATUS_COLOR[seat.status],
+          width: 100, height: 50, backgroundColor: STATUS_COLOR[seat.status],
           display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
           fontWeight: 'bold', cursor: isEditMode ? 'move' : 'pointer',
-          userSelect: 'none', position: 'absolute',
+          userSelect: 'none', position: 'absolute', color: '#fff', fontSize: 12,
           outline: isEditMode ? '2px solid #2196f3' : 'none',
-          boxShadow: '0 2px 6px rgba(0,0,0,0.3)', color: '#fff', fontSize: 12,
-          zIndex: isEditMode ? 100 : 1, borderRadius: '4px'
+          boxShadow: '0 2px 6px rgba(0,0,0,0.3)', borderRadius: '4px', zIndex: isEditMode ? 100 : 1
         }}
       >
-        {user && <div style={{ fontSize: 16 }}>{user.name}</div>}
+        {user && <div style={{ fontSize: 14 }}>{user.name}</div>}
       </div>
     </Draggable>
   );
 }
 
-// --- 4. Main Application ---
 export default function App() {
   const prefersDarkMode = useMediaQuery('(prefers-color-scheme: dark)');
   const theme = useMemo(() => createTheme({ palette: { mode: prefersDarkMode ? 'dark' : 'light' } }), [prefersDarkMode]);
 
   const [dashboards, setDashboards] = useState<Dashboard[]>([]);
-  const [dashboardId, setDashboardId] = useState<number>(() => {
-    const saved = localStorage.getItem('selectedDashboardId');
-    return saved ? parseInt(saved, 10) : 1;
-  });
-
+  const [dashboardId, setDashboardId] = useState<number>(() => Number(localStorage.getItem('selectedDashboardId')) || 1);
   const [users, setUsers] = useState<User[]>([]);
   const [seats, setSeats] = useState<Seat[]>([]);
   const [loading, setLoading] = useState(true);
   const [isEditMode, setIsEditMode] = useState(false);
 
-  // Fetch dashboard list
-  useEffect(() => {
-    fetch(`${API_BASE_URL}/api/dashboards`)
-      .then(res => res.json())
-      .then(data => {
-        setDashboards(data);
-        if (data.length > 0 && !data.find((d: Dashboard) => d.id === dashboardId)) {
-          setDashboardId(data[0].id);
-        }
-      })
-      .catch(err => console.error("Fetch error:", err));
-  }, []);
-
-  // Save selection to LocalStorage
-  useEffect(() => {
-    localStorage.setItem('selectedDashboardId', dashboardId.toString());
-  }, [dashboardId]);
+  const [openAdd, setOpenAdd] = useState(false);
+  const [newUser, setNewUser] = useState({ name: '', team: '' });
 
   const fetchUsers = useCallback(async () => {
     try {
       const response = await fetch(`${API_BASE_URL}/api/users/${dashboardId}`);
-      if (!response.ok) throw new Error('Failed to fetch');
       const data: User[] = await response.json();
       setUsers(data);
       setSeats(data.map(u => ({ id: u.id, x: u.x || 0, y: u.y || 0, status: u.presence, userId: u.id })));
-    } catch (error) {
-      console.error(error);
-    } finally {
-      setLoading(false);
-    }
+    } catch (err) { console.error(err); } finally { setLoading(false); }
   }, [dashboardId]);
+
+  useEffect(() => {
+    fetch(`${API_BASE_URL}/api/dashboards`).then(res => res.json()).then(setDashboards);
+  }, []);
 
   useEffect(() => {
     fetchUsers();
@@ -162,127 +103,97 @@ export default function App() {
   }, [fetchUsers, isEditMode]);
 
   const updateSeat = useCallback(async (id: number, data: Partial<User>) => {
-    try {
-      const user = users.find((u) => u.id === id);
-      if (!user) return;
-      const updatePayload = { ...user, ...data };
-      await fetch(`${API_BASE_URL}/api/users/${id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(updatePayload),
-      });
-      setUsers(prev => prev.map(u => u.id === id ? { ...u, ...data } : u));
-      setSeats(prev => prev.map(s => s.id === id ? { ...s, status: data.presence || s.status, x: data.x ?? s.x, y: data.y ?? s.y } : s));
-    } catch (error) {
-      fetchUsers();
-    }
-  }, [users, fetchUsers]);
+    const user = users.find((u) => u.id === id);
+    if (!user) return;
+    const payload = { ...user, ...data };
+    await fetch(`${API_BASE_URL}/api/users/${id}`, {
+      method: 'PUT', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    setUsers(prev => prev.map(u => u.id === id ? { ...u, ...data } : u));
+    setSeats(prev => prev.map(s => s.id === id ? { ...s, status: data.presence || s.status, x: data.x ?? s.x, y: data.y ?? s.y } : s));
+  }, [users]);
+
+  // Add member
+  const handleAddMember = async () => {
+    const payload = { ...newUser, presence: 'present', dashboard_id: dashboardId, x: 0, y: 0, order: users.length };
+    await fetch(`${API_BASE_URL}/api/users`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    setOpenAdd(false);
+    setNewUser({ name: '', team: '' });
+    fetchUsers();
+  };
+
+  // Delete member
+  const handleDeleteMember = async (id: number) => {
+    if (!window.confirm("Are you sure?")) return;
+    await fetch(`${API_BASE_URL}/api/users/${id}`, { method: 'DELETE' });
+    fetchUsers();
+  };
 
   const columns: GridColDef[] = [
     { field: 'team', headerName: 'Team', width: 120 },
     { field: 'name', headerName: 'Name', width: 120 },
     {
-      field: 'presence',
-      headerName: 'Status',
-      width: 100,
-      renderCell: (params: GridRenderCellParams) => (
-        <Button
-          size='small' variant='contained' disabled={isEditMode}
-          onClick={() => updateSeat(params.row.id, { presence: nextStatus(params.row.presence) })}
-          sx={{ width: '100%', backgroundColor: STATUS_COLOR[params.row.presence as PresenceStatus], color: '#fff' }}
-        >
-          {params.row.presence}
-        </Button>
+      field: 'presence', headerName: 'Status', width: 100,
+      renderCell: (p) => (
+        <Button size='small' variant='contained' disabled={isEditMode}
+          onClick={() => updateSeat(p.row.id, { presence: nextStatus(p.row.presence) })}
+          sx={{ width: '100%', backgroundColor: STATUS_COLOR[p.row.presence as PresenceStatus], color: '#fff' }}
+        > {p.row.presence} </Button>
       ),
     },
     { field: 'note1', headerName: 'Note 1', flex: 1, editable: true },
     { field: 'note2', headerName: 'Note 2', flex: 1, editable: true },
+    // Delete column only in edit mode
+    ...(isEditMode ? [{
+      field: 'actions', headerName: '', width: 50,
+      renderCell: (p: any) => (
+        <IconButton color="error" onClick={() => handleDeleteMember(p.row.id)}><DeleteIcon /></IconButton>
+      )
+    }] : [])
   ];
 
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
       <Box display="flex" flexDirection="column" width="100vw" height="100vh">
-
-        {/* --- Centered Header Layout --- */}
-        <Box
-          px={3} py={1}
-          display="flex"
-          alignItems="center"
-          bgcolor="background.paper"
-          borderBottom={1}
-          borderColor="divider"
-          position="relative" // Allows absolute centering for the middle element
-          sx={{ height: '64px' }}
-        >
-          {/* Left: Title */}
-          <Typography variant="h6" fontWeight="bold" sx={{ flexShrink: 0 }}>
-            Presence Dashboard
-          </Typography>
-
-          {/* Center: Dashboard Selector */}
-          <Box
-            position="absolute"
-            left="50%"
-            sx={{ transform: 'translateX(-50%)', minWidth: 250 }}
-          >
+        <Box px={3} py={1} display="flex" alignItems="center" bgcolor="background.paper" borderBottom={1} borderColor="divider" sx={{ height: '64px' }}>
+          <Typography variant="h6" fontWeight="bold">Presence Dashboard</Typography>
+          <Box position="absolute" left="50%" sx={{ transform: 'translateX(-50%)', minWidth: 250 }}>
             <FormControl size="small" fullWidth>
-              <InputLabel id="dashboard-select-label">Select Dashboard</InputLabel>
-              <Select
-                labelId="dashboard-select-label"
-                value={dashboardId}
-                label="Select Dashboard"
-                onChange={(e) => {
-                  setLoading(true);
-                  setDashboardId(Number(e.target.value));
-                }}
-              >
-                {dashboards.map((db) => (
-                  <MenuItem key={db.id} value={db.id}>
-                    {db.dashboard_name}
-                  </MenuItem>
-                ))}
+              <InputLabel>Select Dashboard</InputLabel>
+              <Select label="Select Dashboard" value={dashboardId} onChange={(e) => { setLoading(true); setDashboardId(Number(e.target.value)); }}>
+                {dashboards.map(db => <MenuItem key={db.id} value={db.id}>{db.dashboard_name}</MenuItem>)}
               </Select>
             </FormControl>
           </Box>
-
-          {/* Right: Mode Switcher */}
-          <Box sx={{ marginLeft: 'auto' }}>
-            <FormControlLabel
-              control={<Switch checked={isEditMode} onChange={(e) => setIsEditMode(e.target.checked)} />}
-              label={isEditMode ? "Edit Mode" : "View Mode"}
-            />
+          <Box sx={{ marginLeft: 'auto' }} display="flex" gap={2}>
+            {isEditMode && <Button startIcon={<AddIcon />} variant="contained" onClick={() => setOpenAdd(true)}>Add Member</Button>}
+            <FormControlLabel control={<Switch checked={isEditMode} onChange={(e) => setIsEditMode(e.target.checked)} />} label={isEditMode ? "Edit Mode" : "View Mode"} />
           </Box>
         </Box>
 
-        {/* --- Content Area --- */}
-        {loading ? (
-          <Box flex={1} display="flex" justifyContent="center" alignItems="center"><CircularProgress /></Box>
-        ) : (
+        {loading ? <Box flex={1} display="flex" justifyContent="center" alignItems="center"><CircularProgress /></Box> : (
           <Box display="flex" flex={1} overflow="hidden">
-            <Box flex={1} position="relative" sx={{
-              backgroundImage: isEditMode ? `radial-gradient(${theme.palette.divider} 1px, transparent 1px)` : 'none',
-              backgroundSize: '20px 20px',
-              overflow: 'auto'
-            }}>
-              {seats.map(seat => (
-                <SeatItem key={seat.id} seat={seat} onUpdate={updateSeat} users={users} isEditMode={isEditMode} />
-              ))}
+            <Box flex={1} position="relative" sx={{ backgroundImage: isEditMode ? `radial-gradient(${theme.palette.divider} 1px, transparent 1px)` : 'none', backgroundSize: '20px 20px', overflow: 'auto' }}>
+              {seats.map(s => <SeatItem key={s.id} seat={s} onUpdate={updateSeat} users={users} isEditMode={isEditMode} />)}
             </Box>
-
-            <Box width="67vw" borderLeft={1} borderColor="divider" bgcolor="background.paper">
-              <DataGrid
-                rows={users}
-                columns={columns}
-                processRowUpdate={async (newRow) => {
-                  await updateSeat(newRow.id, { note1: newRow.note1, note2: newRow.note2 });
-                  return newRow;
-                }}
-                hideFooter
-              />
+            <Box width="67vw" borderLeft={1} borderColor="divider">
+              <DataGrid rows={users} columns={columns} processRowUpdate={async (n) => { await updateSeat(n.id, { note1: n.note1, note2: n.note2 }); return n; }} hideFooter />
             </Box>
           </Box>
         )}
+        <Dialog open={openAdd} onClose={() => setOpenAdd(false)}>
+          <DialogTitle>Add New Member</DialogTitle>
+          <DialogContent><Box display="flex" flexDirection="column" gap={2} pt={1}>
+            <TextField label="Name" fullWidth value={newUser.name} onChange={e => setNewUser({ ...newUser, name: e.target.value })} />
+            <TextField label="Team" fullWidth value={newUser.team} onChange={e => setNewUser({ ...newUser, team: e.target.value })} />
+          </Box></DialogContent>
+          <DialogActions><Button onClick={() => setOpenAdd(false)}>Cancel</Button><Button onClick={handleAddMember} variant="contained">Add</Button></DialogActions>
+        </Dialog>
       </Box>
     </ThemeProvider>
   );
