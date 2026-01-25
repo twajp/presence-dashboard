@@ -6,10 +6,12 @@ import {
   Button, CircularProgress, Box, Switch, FormControlLabel, ThemeProvider,
   createTheme, CssBaseline, useMediaQuery, Select, MenuItem, FormControl,
   InputLabel, Typography, IconButton, Dialog, DialogTitle, DialogContent,
-  TextField, DialogActions, Tooltip, Stack
+  TextField, DialogActions, Stack
 } from '@mui/material';
 import DeleteIcon from '@mui/icons-material/Delete';
 import AddIcon from '@mui/icons-material/Add';
+import ArrowUpwardIcon from '@mui/icons-material/ArrowUpward';
+import ArrowDownwardIcon from '@mui/icons-material/ArrowDownward';
 import DashboardCustomizeIcon from '@mui/icons-material/DashboardCustomize';
 
 type PresenceStatus = 'present' | 'remote' | 'trip' | 'off';
@@ -17,7 +19,7 @@ type Dashboard = { id: number; dashboard_name: string; };
 type User = {
   id: number; name: string; presence: PresenceStatus;
   note1?: string; note2?: string; x: number; y: number;
-  team?: string; dashboard_id?: number;
+  team?: string; dashboard_id?: number; order: number;
 };
 type Seat = { id: number; x: number; y: number; status: PresenceStatus; userId?: number; };
 
@@ -34,16 +36,8 @@ const STATUS_ORDER: PresenceStatus[] = ['present', 'remote', 'trip', 'off'];
 
 // --- Sub-Components ---
 
-function PresenceDialog({
-  open,
-  onClose,
-  currentStatus,
-  onSelect
-}: {
-  open: boolean;
-  onClose: () => void;
-  currentStatus?: PresenceStatus;
-  onSelect: (status: PresenceStatus) => void;
+function PresenceDialog({ open, onClose, currentStatus, onSelect }: {
+  open: boolean; onClose: () => void; currentStatus?: PresenceStatus; onSelect: (status: PresenceStatus) => void;
 }) {
   return (
     <Dialog open={open} onClose={onClose} maxWidth="xs" fullWidth>
@@ -57,15 +51,10 @@ function PresenceDialog({
               onClick={() => { onSelect(status); onClose(); }}
               sx={{
                 py: 1.5,
-                fontSize: '1rem',
                 borderColor: STATUS_CONFIG[status].color,
                 color: currentStatus === status ? '#fff' : STATUS_CONFIG[status].color,
                 backgroundColor: currentStatus === status ? STATUS_CONFIG[status].color : 'transparent',
-                '&:hover': {
-                  backgroundColor: STATUS_CONFIG[status].color,
-                  color: '#fff',
-                  opacity: 0.9
-                }
+                '&:hover': { backgroundColor: STATUS_CONFIG[status].color, color: '#fff' }
               }}
             >
               {STATUS_CONFIG[status].label}
@@ -133,7 +122,6 @@ export default function App() {
   const [loading, setLoading] = useState(true);
   const [isEditMode, setIsEditMode] = useState(false);
 
-  // Modal States
   const [openAdd, setOpenAdd] = useState(false);
   const [openAddDb, setOpenAddDb] = useState(false);
   const [presenceTarget, setPresenceTarget] = useState<User | null>(null);
@@ -157,8 +145,10 @@ export default function App() {
     try {
       const response = await fetch(`${API_BASE_URL}/api/users/${dashboardId}`);
       const data: User[] = await response.json();
-      setUsers(data);
-      setSeats(data.map(u => ({ id: u.id, x: u.x || 0, y: u.y || 0, status: u.presence, userId: u.id })));
+      // Ensure data is sorted by order
+      const sortedData = [...data].sort((a, b) => a.order - b.order);
+      setUsers(sortedData);
+      setSeats(sortedData.map(u => ({ id: u.id, x: u.x || 0, y: u.y || 0, status: u.presence, userId: u.id })));
     } catch (err) { console.error(err); } finally { setLoading(false); }
   }, [dashboardId]);
 
@@ -180,12 +170,37 @@ export default function App() {
       method: 'PUT', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),
     });
-    setUsers(prev => prev.map(u => u.id === id ? { ...u, ...data } : u));
+    setUsers(prev => {
+      const updated = prev.map(u => u.id === id ? { ...u, ...data } : u);
+      return updated.sort((a, b) => a.order - b.order);
+    });
     setSeats(prev => prev.map(s => s.id === id ? { ...s, status: data.presence || s.status, x: data.x ?? s.x, y: data.y ?? s.y } : s));
   }, [users]);
 
+  const handleMove = async (index: number, direction: 'up' | 'down') => {
+    const targetIndex = direction === 'up' ? index - 1 : index + 1;
+    if (targetIndex < 0 || targetIndex >= users.length) return;
+
+    const currentItem = { ...users[index] };
+    const targetItem = { ...users[targetIndex] };
+
+    // Swap order values
+    const tempOrder = currentItem.order;
+    currentItem.order = targetItem.order;
+    targetItem.order = tempOrder;
+
+    // Persist both to DB
+    await Promise.all([
+      updateSeat(currentItem.id, { order: currentItem.order }),
+      updateSeat(targetItem.id, { order: targetItem.order })
+    ]);
+    fetchUsers(); // Refresh list to ensure order is correct
+  };
+
   const handleAddMember = async () => {
-    const payload = { ...newUser, presence: 'present', dashboard_id: dashboardId, x: 0, y: 0, order: users.length };
+    // New members get the highest order + 1
+    const maxOrder = users.length > 0 ? Math.max(...users.map(u => u.order)) : 0;
+    const payload = { ...newUser, presence: 'present', dashboard_id: dashboardId, x: 0, y: 0, order: maxOrder + 1 };
     await fetch(`${API_BASE_URL}/api/users`, {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),
@@ -236,10 +251,23 @@ export default function App() {
     { field: 'note1', headerName: 'Note 1', flex: 1, editable: true },
     { field: 'note2', headerName: 'Note 2', flex: 1, editable: true },
     ...(isEditMode ? [{
-      field: 'actions', headerName: '', width: 50,
-      renderCell: (p: any) => (
-        <IconButton color="error" onClick={() => handleDeleteMember(p.row.id)}><DeleteIcon /></IconButton>
-      )
+      field: 'actions', headerName: 'Actions', width: 140,
+      renderCell: (p: any) => {
+        const index = users.findIndex(u => u.id === p.row.id);
+        return (
+          <Stack direction="row" spacing={0}>
+            <IconButton size="small" disabled={index === 0} onClick={() => handleMove(index, 'up')}>
+              <ArrowUpwardIcon fontSize="small" />
+            </IconButton>
+            <IconButton size="small" disabled={index === users.length - 1} onClick={() => handleMove(index, 'down')}>
+              <ArrowDownwardIcon fontSize="small" />
+            </IconButton>
+            <IconButton size="small" color="error" onClick={() => handleDeleteMember(p.row.id)}>
+              <DeleteIcon fontSize="small" />
+            </IconButton>
+          </Stack>
+        )
+      }
     }] : [])
   ];
 
@@ -247,11 +275,11 @@ export default function App() {
     <ThemeProvider theme={theme}>
       <CssBaseline />
       <Box display="flex" flexDirection="column" width="100vw" height="100vh">
-        <Box px={3} py={1} display="flex" alignItems="center" bgcolor="background.paper" borderBottom={1} borderColor="divider" sx={{ height: '64px', position: 'relative' }}>
+        <Box px={3} py={1} display="flex" alignItems="center" bgcolor="background.paper" borderBottom={1} borderColor="divider" sx={{ height: '64px' }}>
           <Typography variant="h6" fontWeight="bold">Presence Dashboard</Typography>
 
-          <Box position="absolute" left="50%" sx={{ transform: 'translateX(-50%)', minWidth: 280, display: 'flex', alignItems: 'center', gap: 1 }}>
-            <FormControl size="small" fullWidth>
+          <Box sx={{ flex: 1, display: 'flex', justifyContent: 'center', gap: 1 }}>
+            <FormControl size="small" sx={{ minWidth: 200 }}>
               <InputLabel id="db-select-label">Select Dashboard</InputLabel>
               <Select
                 labelId="db-select-label"
@@ -267,14 +295,10 @@ export default function App() {
                 {dashboards.map(db => <MenuItem key={db.id} value={db.id}>{db.dashboard_name}</MenuItem>)}
               </Select>
             </FormControl>
-            <Tooltip title="Add New Dashboard">
-              <IconButton color="primary" onClick={() => setOpenAddDb(true)}>
-                <DashboardCustomizeIcon />
-              </IconButton>
-            </Tooltip>
+            <IconButton color="primary" onClick={() => setOpenAddDb(true)}><DashboardCustomizeIcon /></IconButton>
           </Box>
 
-          <Box sx={{ marginLeft: 'auto' }} display="flex" gap={2}>
+          <Box display="flex" gap={2}>
             {isEditMode && <Button startIcon={<AddIcon />} variant="contained" onClick={() => setOpenAdd(true)}>Add Member</Button>}
             <FormControlLabel control={<Switch checked={isEditMode} onChange={(e) => setIsEditMode(e.target.checked)} />} label={isEditMode ? "Edit Mode" : "View Mode"} />
           </Box>
@@ -290,13 +314,7 @@ export default function App() {
                 rows={users}
                 columns={columns}
                 processRowUpdate={async (n) => {
-                  // Update any changed field (notes, name, or team)
-                  await updateSeat(n.id, {
-                    note1: n.note1,
-                    note2: n.note2,
-                    name: n.name,
-                    team: n.team
-                  });
+                  await updateSeat(n.id, { note1: n.note1, note2: n.note2, name: n.name, team: n.team });
                   return n;
                 }}
                 hideFooter
@@ -306,15 +324,8 @@ export default function App() {
           </Box>
         )}
 
-        {/* Presence Selector Dialog */}
-        <PresenceDialog
-          open={!!presenceTarget}
-          onClose={() => setPresenceTarget(null)}
-          currentStatus={presenceTarget?.presence}
-          onSelect={(status) => presenceTarget && updateSeat(presenceTarget.id, { presence: status })}
-        />
+        <PresenceDialog open={!!presenceTarget} onClose={() => setPresenceTarget(null)} currentStatus={presenceTarget?.presence} onSelect={(status) => presenceTarget && updateSeat(presenceTarget.id, { presence: status })} />
 
-        {/* Other Dialogs */}
         <Dialog open={openAdd} onClose={() => setOpenAdd(false)}>
           <DialogTitle>Add New Member</DialogTitle>
           <DialogContent><Box display="flex" flexDirection="column" gap={2} pt={1}>

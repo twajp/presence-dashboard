@@ -34,15 +34,15 @@ let connection: any;
     });
 
     app.get('/api/users/:dashboardId', async (req, res) => {
-        const [rows] = await connection.execute('SELECT * FROM user WHERE dashboard_id = ? ORDER BY `order`', [req.params.dashboardId]);
+        const [rows] = await connection.execute('SELECT * FROM user WHERE dashboard_id = ? ORDER BY `order` ASC', [req.params.dashboardId]);
         res.json(rows);
     });
 
     app.put('/api/users/:id', async (req, res) => {
-        const { name, presence, note1, note2, x, y } = req.body;
+        const { name, presence, note1, note2, x, y, order } = req.body;
         await connection.execute(
-            'UPDATE user SET name=?, presence=?, note1=?, note2=?, x=?, y=? WHERE id=?',
-            [name, presence, note1, note2, x, y, req.params.id]
+            'UPDATE user SET name=?, presence=?, note1=?, note2=?, x=?, y=?, `order`=? WHERE id=?',
+            [name, presence, note1, note2, x, y, order, req.params.id]
         );
         res.json({ success: true });
     });
