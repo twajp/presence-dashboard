@@ -79,6 +79,8 @@ let connection: any;
         console.log(`✅ Server running on http://localhost:${PORT}`);
         console.log(`📊 GET /api/dashboards - Get dashboard list`);
         console.log(`➕ POST /api/dashboards - Create dashboard`);
+        console.log(`📋 GET /api/columns/:dashboardId - Get dashboard columns`);
+        console.log(`✏️  PUT /api/columns/:dashboardId - Update dashboard columns`);
         console.log(`👥 GET /api/users - Get user list`);
         console.log(`👤 GET /api/users/:dashboardId - Get users by dashboard`);
         console.log(`✏️  PUT /api/users/:id - Update user`);
