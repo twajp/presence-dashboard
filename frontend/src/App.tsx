@@ -6,7 +6,7 @@ import {
   Button, CircularProgress, Box, Switch, FormControlLabel, ThemeProvider,
   createTheme, CssBaseline, useMediaQuery, Select, MenuItem, FormControl,
   InputLabel, Typography, IconButton, Dialog, DialogTitle, DialogContent,
-  TextField, DialogActions, Tooltip
+  TextField, DialogActions, Tooltip, Stack
 } from '@mui/material';
 import DeleteIcon from '@mui/icons-material/Delete';
 import AddIcon from '@mui/icons-material/Add';
@@ -22,18 +22,64 @@ type User = {
 type Seat = { id: number; x: number; y: number; status: PresenceStatus; userId?: number; };
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
-const STATUS_COLOR: Record<PresenceStatus, string> = {
-  present: '#4caf50', remote: '#2196f3', trip: '#ffc107', off: '#9e9e9e',
-};
-const STATUS_ORDER: PresenceStatus[] = ['present', 'remote', 'trip', 'off'];
-const nextStatus = (status: PresenceStatus): PresenceStatus => {
-  const index = STATUS_ORDER.indexOf(status);
-  return STATUS_ORDER[(index + 1) % STATUS_ORDER.length];
+
+const STATUS_CONFIG: Record<PresenceStatus, { color: string; label: string }> = {
+  present: { color: '#4caf50', label: 'Present' },
+  remote: { color: '#2196f3', label: 'Remote' },
+  trip: { color: '#ffc107', label: 'Trip' },
+  off: { color: '#9e9e9e', label: 'Off' },
 };
 
-function SeatItem({ seat, onUpdate, users, isEditMode }: {
+const STATUS_ORDER: PresenceStatus[] = ['present', 'remote', 'trip', 'off'];
+
+// --- Sub-Components ---
+
+function PresenceDialog({
+  open,
+  onClose,
+  currentStatus,
+  onSelect
+}: {
+  open: boolean;
+  onClose: () => void;
+  currentStatus?: PresenceStatus;
+  onSelect: (status: PresenceStatus) => void;
+}) {
+  return (
+    <Dialog open={open} onClose={onClose} maxWidth="xs" fullWidth>
+      <DialogTitle sx={{ textAlign: 'center' }}>Set Presence</DialogTitle>
+      <DialogContent>
+        <Stack spacing={2} py={1}>
+          {STATUS_ORDER.map((status) => (
+            <Button
+              key={status}
+              variant={currentStatus === status ? "contained" : "outlined"}
+              onClick={() => { onSelect(status); onClose(); }}
+              sx={{
+                py: 1.5,
+                fontSize: '1rem',
+                borderColor: STATUS_CONFIG[status].color,
+                color: currentStatus === status ? '#fff' : STATUS_CONFIG[status].color,
+                backgroundColor: currentStatus === status ? STATUS_CONFIG[status].color : 'transparent',
+                '&:hover': {
+                  backgroundColor: STATUS_CONFIG[status].color,
+                  color: '#fff',
+                  opacity: 0.9
+                }
+              }}
+            >
+              {STATUS_CONFIG[status].label}
+            </Button>
+          ))}
+        </Stack>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function SeatItem({ seat, onUpdate, users, isEditMode, onStatusClick }: {
   seat: Seat; onUpdate: (id: number, data: Partial<User>) => void;
-  users: User[]; isEditMode: boolean;
+  users: User[]; isEditMode: boolean; onStatusClick: (user: User) => void;
 }) {
   const draggedRef = useRef(false);
   const nodeRef = useRef<HTMLDivElement>(null);
@@ -52,11 +98,11 @@ function SeatItem({ seat, onUpdate, users, isEditMode }: {
       <div
         ref={nodeRef}
         onClick={() => {
-          if (draggedRef.current || isEditMode) return;
-          onUpdate(seat.id, { presence: nextStatus(seat.status) });
+          if (draggedRef.current || isEditMode || !user) return;
+          onStatusClick(user);
         }}
         style={{
-          width: 100, height: 50, backgroundColor: STATUS_COLOR[seat.status],
+          width: 100, height: 50, backgroundColor: STATUS_CONFIG[seat.status].color,
           display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
           fontWeight: 'bold', cursor: isEditMode ? 'move' : 'pointer',
           userSelect: 'none', position: 'absolute', color: '#fff', fontSize: 12,
@@ -70,12 +116,13 @@ function SeatItem({ seat, onUpdate, users, isEditMode }: {
   );
 }
 
+// --- Main App ---
+
 export default function App() {
   const prefersDarkMode = useMediaQuery('(prefers-color-scheme: dark)');
   const theme = useMemo(() => createTheme({ palette: { mode: prefersDarkMode ? 'dark' : 'light' } }), [prefersDarkMode]);
 
   const [dashboards, setDashboards] = useState<Dashboard[]>([]);
-  // Fix: Initialize with '' to avoid MUI out-of-range error before dashboards fetch
   const [dashboardId, setDashboardId] = useState<number | ''>(() => {
     const saved = localStorage.getItem('selectedDashboardId');
     return saved ? Number(saved) : '';
@@ -86,8 +133,11 @@ export default function App() {
   const [loading, setLoading] = useState(true);
   const [isEditMode, setIsEditMode] = useState(false);
 
+  // Modal States
   const [openAdd, setOpenAdd] = useState(false);
   const [openAddDb, setOpenAddDb] = useState(false);
+  const [presenceTarget, setPresenceTarget] = useState<User | null>(null);
+
   const [newUser, setNewUser] = useState({ name: '', team: '' });
   const [newDbName, setNewDbName] = useState('');
 
@@ -96,7 +146,6 @@ export default function App() {
       const res = await fetch(`${API_BASE_URL}/api/dashboards`);
       const data = await res.json();
       setDashboards(data);
-      // Auto-select first dashboard if none selected
       if (data.length > 0 && dashboardId === '') {
         setDashboardId(data[0].id);
       }
@@ -174,8 +223,13 @@ export default function App() {
       field: 'presence', headerName: 'Status', width: 100,
       renderCell: (p) => (
         <Button size='small' variant='contained' disabled={isEditMode}
-          onClick={() => updateSeat(p.row.id, { presence: nextStatus(p.row.presence) })}
-          sx={{ width: '100%', backgroundColor: STATUS_COLOR[p.row.presence as PresenceStatus], color: '#fff', '&:hover': { opacity: 0.8, backgroundColor: STATUS_COLOR[p.row.presence as PresenceStatus] } }}
+          onClick={() => setPresenceTarget(p.row as User)}
+          sx={{
+            width: '100%',
+            backgroundColor: STATUS_CONFIG[p.row.presence as PresenceStatus].color,
+            color: '#fff',
+            '&:hover': { opacity: 0.8, backgroundColor: STATUS_CONFIG[p.row.presence as PresenceStatus].color }
+          }}
         > {p.row.presence} </Button>
       ),
     },
@@ -229,7 +283,7 @@ export default function App() {
         {loading && dashboardId !== '' ? <Box flex={1} display="flex" justifyContent="center" alignItems="center"><CircularProgress /></Box> : (
           <Box display="flex" flex={1} overflow="hidden">
             <Box flex={1} position="relative" sx={{ backgroundImage: isEditMode ? `radial-gradient(${theme.palette.divider} 1px, transparent 1px)` : 'none', backgroundSize: '20px 20px', overflow: 'auto', bgcolor: 'background.default' }}>
-              {seats.map(s => <SeatItem key={s.id} seat={s} onUpdate={updateSeat} users={users} isEditMode={isEditMode} />)}
+              {seats.map(s => <SeatItem key={s.id} seat={s} onUpdate={updateSeat} users={users} isEditMode={isEditMode} onStatusClick={(u) => setPresenceTarget(u)} />)}
             </Box>
             <Box width="60vw" borderLeft={1} borderColor="divider">
               <DataGrid
@@ -243,7 +297,15 @@ export default function App() {
           </Box>
         )}
 
-        {/* Dialogs remain the same */}
+        {/* Presence Selector Dialog */}
+        <PresenceDialog
+          open={!!presenceTarget}
+          onClose={() => setPresenceTarget(null)}
+          currentStatus={presenceTarget?.presence}
+          onSelect={(status) => presenceTarget && updateSeat(presenceTarget.id, { presence: status })}
+        />
+
+        {/* Other Dialogs */}
         <Dialog open={openAdd} onClose={() => setOpenAdd(false)}>
           <DialogTitle>Add New Member</DialogTitle>
           <DialogContent><Box display="flex" flexDirection="column" gap={2} pt={1}>
