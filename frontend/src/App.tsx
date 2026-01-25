@@ -217,8 +217,8 @@ export default function App() {
   };
 
   const columns: GridColDef[] = [
-    { field: 'team', headerName: 'Team', width: 120 },
-    { field: 'name', headerName: 'Name', width: 120 },
+    { field: 'team', headerName: 'Team', width: 120, editable: isEditMode },
+    { field: 'name', headerName: 'Name', width: 120, editable: isEditMode },
     {
       field: 'presence', headerName: 'Status', width: 100,
       renderCell: (p) => (
@@ -289,7 +289,16 @@ export default function App() {
               <DataGrid
                 rows={users}
                 columns={columns}
-                processRowUpdate={async (n) => { await updateSeat(n.id, { note1: n.note1, note2: n.note2 }); return n; }}
+                processRowUpdate={async (n) => {
+                  // Update any changed field (notes, name, or team)
+                  await updateSeat(n.id, {
+                    note1: n.note1,
+                    note2: n.note2,
+                    name: n.name,
+                    team: n.team
+                  });
+                  return n;
+                }}
                 hideFooter
                 sx={{ border: 'none' }}
               />
