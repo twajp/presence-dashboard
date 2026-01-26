@@ -546,7 +546,7 @@ export default function App() {
               }}
               onMouseDown={handleWidthResizeStart}
             />
-            <Box flex={1} borderLeft={1} borderColor="divider">
+            <Box flex={1} borderLeft={1} borderColor="divider" sx={{ minWidth: 0 }}>
               <DataGrid
                 rows={users}
                 columns={columns}
