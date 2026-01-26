@@ -474,6 +474,7 @@ export default function App() {
                 labelId="db-select-label"
                 label="Select Dashboard"
                 value={dashboards.length > 0 ? dashboardId : ''}
+                disabled={isEditMode}
                 onChange={(e) => {
                   const val = Number(e.target.value);
                   setLoading(true);
