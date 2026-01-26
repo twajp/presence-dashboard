@@ -48,14 +48,14 @@ let connection: any;
 
     app.get('/api/columns/:dashboardId', async (req, res) => {
         const [rows]: any = await connection.execute('SELECT * FROM dashboard_settings WHERE id = ?', [req.params.dashboardId]);
-        res.json(rows[0] || { team_label: 'Team', name_label: 'Name', note1_label: 'Note 1', note2_label: 'Note 2' });
+        res.json(rows[0] || { team_label: 'Team', name_label: 'Name', note1_label: 'Note 1', note2_label: 'Note 2', split_position: 40 });
     });
 
     app.put('/api/columns/:dashboardId', async (req, res) => {
-        const { team_label, name_label, note1_label, note2_label } = req.body;
+        const { team_label, name_label, note1_label, note2_label, split_position } = req.body;
         await connection.execute(
-            'INSERT INTO dashboard_settings (id, team_label, name_label, note1_label, note2_label) VALUES (?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE team_label=?, name_label=?, note1_label=?, note2_label=?',
-            [req.params.dashboardId, team_label, name_label, note1_label, note2_label, team_label, name_label, note1_label, note2_label]
+            'INSERT INTO dashboard_settings (id, team_label, name_label, note1_label, note2_label, split_position) VALUES (?, ?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE team_label=?, name_label=?, note1_label=?, note2_label=?, split_position=?',
+            [req.params.dashboardId, team_label, name_label, note1_label, note2_label, split_position, team_label, name_label, note1_label, note2_label, split_position]
         );
         res.json({ success: true });
     });

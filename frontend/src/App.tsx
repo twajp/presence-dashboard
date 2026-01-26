@@ -127,7 +127,8 @@ export default function App() {
     team_label: 'Team',
     name_label: 'Name',
     note1_label: 'Note 1',
-    note2_label: 'Note 2'
+    note2_label: 'Note 2',
+    split_position: 40
   });
   const [editingHeader, setEditingHeader] = useState<string | null>(null);
 
@@ -135,6 +136,8 @@ export default function App() {
   const [openAddDb, setOpenAddDb] = useState(false);
   const [openDbSettings, setOpenDbSettings] = useState(false);
   const [presenceTarget, setPresenceTarget] = useState<User | null>(null);
+  const [isResizing, setIsResizing] = useState(false);
+  const [splitPosition, setSplitPosition] = useState(40);
 
   const [newUser, setNewUser] = useState({ name: '', team: '' });
   const [newDbName, setNewDbName] = useState('');
@@ -160,8 +163,10 @@ export default function App() {
         team_label: data.team_label || 'Team',
         name_label: data.name_label || 'Name',
         note1_label: data.note1_label || 'Note 1',
-        note2_label: data.note2_label || 'Note 2'
+        note2_label: data.note2_label || 'Note 2',
+        split_position: data.split_position ?? 40
       });
+      setSplitPosition(data.split_position ?? 40);
     } catch (err) { console.error(err); }
   }, [dashboardId]);
 
@@ -211,6 +216,48 @@ export default function App() {
     });
     setEditingHeader(null);
   };
+
+  const saveSplitPosition = async (position: number) => {
+    if (dashboardId === '') return;
+    const newHeaders = { ...headers, split_position: position };
+    setHeaders(newHeaders);
+    await fetch(`${API_BASE_URL}/api/columns/${dashboardId}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(newHeaders),
+    });
+  };
+
+  const handleMouseDown = () => {
+    if (!isEditMode) return;
+    setIsResizing(true);
+  };
+
+  const handleMouseMove = useCallback((e: MouseEvent) => {
+    if (!isResizing) return;
+    const newPosition = (e.clientX / window.innerWidth) * 100;
+    if (newPosition > 10 && newPosition < 90) {
+      setSplitPosition(newPosition);
+    }
+  }, [isResizing]);
+
+  const handleMouseUp = useCallback(() => {
+    if (isResizing) {
+      setIsResizing(false);
+      saveSplitPosition(splitPosition);
+    }
+  }, [isResizing, splitPosition]);
+
+  useEffect(() => {
+    if (isResizing) {
+      document.addEventListener('mousemove', handleMouseMove);
+      document.addEventListener('mouseup', handleMouseUp);
+      return () => {
+        document.removeEventListener('mousemove', handleMouseMove);
+        document.removeEventListener('mouseup', handleMouseUp);
+      };
+    }
+  }, [isResizing, handleMouseMove, handleMouseUp]);
 
   const handleMove = async (index: number, direction: 'up' | 'down') => {
     const targetIndex = direction === 'up' ? index - 1 : index + 1;
@@ -412,10 +459,20 @@ export default function App() {
 
         {loading && dashboardId !== '' ? <Box flex={1} display="flex" justifyContent="center" alignItems="center"><CircularProgress /></Box> : (
           <Box display="flex" flex={1} overflow="hidden">
-            <Box flex={1} position="relative" sx={{ backgroundImage: isEditMode ? `radial-gradient(${theme.palette.divider} 1px, transparent 1px)` : 'none', backgroundSize: '20px 20px', overflow: 'auto', bgcolor: 'background.default' }}>
+            <Box width={`${splitPosition}%`} position="relative" sx={{ backgroundImage: isEditMode ? `radial-gradient(${theme.palette.divider} 1px, transparent 1px)` : 'none', backgroundSize: '20px 20px', overflow: 'auto', bgcolor: 'background.default' }}>
               {seats.map(s => <SeatItem key={s.id} seat={s} onUpdate={updateSeat} users={users} isEditMode={isEditMode} onStatusClick={(u) => setPresenceTarget(u)} />)}
             </Box>
-            <Box width="60vw" borderLeft={1} borderColor="divider">
+            <Box
+              sx={{
+                width: '5px',
+                cursor: isEditMode ? 'col-resize' : 'default',
+                bgcolor: isResizing ? 'primary.main' : 'divider',
+                '&:hover': isEditMode ? { bgcolor: 'primary.main' } : {},
+                transition: 'background-color 0.2s'
+              }}
+              onMouseDown={handleMouseDown}
+            />
+            <Box flex={1} borderLeft={1} borderColor="divider">
               <DataGrid
                 rows={users}
                 columns={columns}
