@@ -41,14 +41,14 @@ function PresenceDialog({ open, onClose, currentStatus, onSelect }: {
   open: boolean; onClose: () => void; currentStatus?: PresenceStatus; onSelect: (status: PresenceStatus) => void;
 }) {
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="xs" fullWidth>
+    <Dialog open={open} onClose={onClose} maxWidth='xs' fullWidth>
       <DialogTitle sx={{ textAlign: 'center' }}>Set Presence</DialogTitle>
       <DialogContent>
         <Stack spacing={2} py={1}>
           {STATUS_ORDER.map((status) => (
             <Button
               key={status}
-              variant={currentStatus === status ? "contained" : "outlined"}
+              variant={currentStatus === status ? 'contained' : 'outlined'}
               onClick={() => { onSelect(status); onClose(); }}
               sx={{
                 py: 1.5,
@@ -156,7 +156,7 @@ export default function App() {
       if (data.length > 0 && dashboardId === '') {
         setDashboardId(data[0].id);
       }
-    } catch (err) { console.error("Failed to fetch dashboards", err); }
+    } catch (err) { console.error('Failed to fetch dashboards', err); }
   }, [dashboardId]);
 
   const fetchHeaderLabels = useCallback(async () => {
@@ -336,7 +336,7 @@ export default function App() {
   };
 
   const handleDeleteMember = async (id: number) => {
-    if (!window.confirm("Are you sure?")) return;
+    if (!window.confirm('Are you sure?')) return;
     await fetch(`${API_BASE_URL}/api/users/${id}`, { method: 'DELETE' });
     fetchUsers();
   };
@@ -371,7 +371,7 @@ export default function App() {
     if (isEditMode && editingHeader === fieldKey) {
       return (
         <TextField
-          variant="standard"
+          variant='standard'
           autoFocus
           value={tempValue}
           onChange={(e) => setTempValue(e.target.value)}
@@ -405,12 +405,12 @@ export default function App() {
     {
       field: 'team', headerName: headers.team_label, width: 120,
       editable: isEditMode, sortable: false, disableColumnMenu: true,
-      renderHeader: () => <EditableHeader label={headers.team_label} fieldKey="team_label" />
+      renderHeader: () => <EditableHeader label={headers.team_label} fieldKey='team_label' />
     },
     {
       field: 'name', headerName: headers.name_label, width: 120,
       editable: isEditMode, sortable: false, disableColumnMenu: true,
-      renderHeader: () => <EditableHeader label={headers.name_label} fieldKey="name_label" />
+      renderHeader: () => <EditableHeader label={headers.name_label} fieldKey='name_label' />
     },
     {
       field: 'presence', headerName: 'Status', width: 100, sortable: false, disableColumnMenu: true,
@@ -430,27 +430,27 @@ export default function App() {
     {
       field: 'note1', headerName: headers.note1_label, flex: 1,
       editable: true, sortable: false, disableColumnMenu: true,
-      renderHeader: () => <EditableHeader label={headers.note1_label} fieldKey="note1_label" />
+      renderHeader: () => <EditableHeader label={headers.note1_label} fieldKey='note1_label' />
     },
     {
       field: 'note2', headerName: headers.note2_label, flex: 1,
       editable: true, sortable: false, disableColumnMenu: true,
-      renderHeader: () => <EditableHeader label={headers.note2_label} fieldKey="note2_label" />
+      renderHeader: () => <EditableHeader label={headers.note2_label} fieldKey='note2_label' />
     },
     ...(isEditMode ? [{
       field: 'actions', headerName: 'Actions', width: 140, sortable: false, disableColumnMenu: true,
       renderCell: (p: any) => {
         const index = users.findIndex(u => u.id === p.row.id);
         return (
-          <Stack direction="row" spacing={0}>
-            <IconButton size="small" disabled={index === 0} onClick={() => handleMove(index, 'up')}>
-              <ArrowUpwardIcon fontSize="small" />
+          <Stack direction='row' spacing={0}>
+            <IconButton size='small' disabled={index === 0} onClick={() => handleMove(index, 'up')}>
+              <ArrowUpwardIcon fontSize='small' />
             </IconButton>
-            <IconButton size="small" disabled={index === users.length - 1} onClick={() => handleMove(index, 'down')}>
-              <ArrowDownwardIcon fontSize="small" />
+            <IconButton size='small' disabled={index === users.length - 1} onClick={() => handleMove(index, 'down')}>
+              <ArrowDownwardIcon fontSize='small' />
             </IconButton>
-            <IconButton size="small" color="error" onClick={() => handleDeleteMember(p.row.id)}>
-              <DeleteIcon fontSize="small" />
+            <IconButton size='small' color='error' onClick={() => handleDeleteMember(p.row.id)}>
+              <DeleteIcon fontSize='small' />
             </IconButton>
           </Stack>
         )
@@ -463,16 +463,16 @@ export default function App() {
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
-      <Box display="flex" flexDirection="column" width="100vw" height="100vh">
-        <Box px={3} py={1} display="flex" alignItems="center" bgcolor="background.paper" borderBottom={1} borderColor="divider" sx={{ height: '64px' }}>
-          <Typography variant="h6" fontWeight="bold" sx={{ display: { xs: 'none', md: 'block' } }}>Presence Dashboard</Typography>
+      <Box display='flex' flexDirection='column' width='100vw' height='100vh'>
+        <Box px={3} py={1} display='flex' alignItems='center' bgcolor='background.paper' borderBottom={1} borderColor='divider' sx={{ height: '64px' }}>
+          <Typography variant='h6' fontWeight='bold' sx={{ display: { xs: 'none', md: 'block' } }}>Presence Dashboard</Typography>
 
           <Box sx={{ flex: 1, display: 'flex', justifyContent: 'center', gap: 1, alignItems: 'center' }}>
-            <FormControl size="small" sx={{ minWidth: 200 }}>
-              <InputLabel id="db-select-label">Select Dashboard</InputLabel>
+            <FormControl size='small' sx={{ minWidth: 200 }}>
+              <InputLabel id='db-select-label'>Select Dashboard</InputLabel>
               <Select
-                labelId="db-select-label"
-                label="Select Dashboard"
+                labelId='db-select-label'
+                label='Select Dashboard'
                 value={dashboards.length > 0 ? dashboardId : ''}
                 disabled={isEditMode}
                 onChange={(e) => {
@@ -486,13 +486,13 @@ export default function App() {
               </Select>
             </FormControl>
 
-            <Tooltip title="Add Dashboard">
-              <IconButton color="primary" onClick={() => setOpenAddDb(true)}><DashboardCustomizeIcon /></IconButton>
+            <Tooltip title='Add Dashboard'>
+              <IconButton color='primary' onClick={() => setOpenAddDb(true)}><DashboardCustomizeIcon /></IconButton>
             </Tooltip>
 
             {isEditMode && dashboardId !== '' && (
-              <Tooltip title="Dashboard Settings">
-                <IconButton color="secondary" onClick={() => {
+              <Tooltip title='Dashboard Settings'>
+                <IconButton color='secondary' onClick={() => {
                   setEditDbName(currentDashboardName);
                   setOpenDbSettings(true);
                 }}>
@@ -502,16 +502,16 @@ export default function App() {
             )}
           </Box>
 
-          <Box display="flex" gap={2}>
-            {isEditMode && <Button startIcon={<AddIcon />} variant="contained" onClick={() => setOpenAdd(true)}>Add Member</Button>}
-            <FormControlLabel control={<Switch checked={isEditMode} onChange={(e) => { setIsEditMode(e.target.checked); setEditingHeader(null); }} />} label={isEditMode ? "Edit Mode" : "View Mode"} />
+          <Box display='flex' gap={2}>
+            {isEditMode && <Button startIcon={<AddIcon />} variant='contained' onClick={() => setOpenAdd(true)}>Add Member</Button>}
+            <FormControlLabel control={<Switch checked={isEditMode} onChange={(e) => { setIsEditMode(e.target.checked); setEditingHeader(null); }} />} label={isEditMode ? 'Edit Mode' : 'View Mode'} />
           </Box>
         </Box>
 
-        {loading && dashboardId !== '' ? <Box flex={1} display="flex" justifyContent="center" alignItems="center"><CircularProgress /></Box> : (
-          <Box display="flex" flex={1} overflow="hidden">
-            <Box id="left-panel" width={`${gridWidth}%`} display="flex" flexDirection="column" overflow="hidden">
-              <Box height={`${gridHeight}%`} position="relative" sx={{ backgroundImage: isEditMode ? `radial-gradient(${theme.palette.divider} 1px, transparent 1px)` : 'none', backgroundSize: '20px 20px', overflow: 'auto', bgcolor: 'background.default' }}>
+        {loading && dashboardId !== '' ? <Box flex={1} display='flex' justifyContent='center' alignItems='center'><CircularProgress /></Box> : (
+          <Box display='flex' flex={1} overflow='hidden'>
+            <Box id='left-panel' width={`${gridWidth}%`} display='flex' flexDirection='column' overflow='hidden'>
+              <Box height={`${gridHeight}%`} position='relative' sx={{ backgroundImage: isEditMode ? `radial-gradient(${theme.palette.divider} 1px, transparent 1px)` : 'none', backgroundSize: '20px 20px', overflow: 'auto', bgcolor: 'background.default' }}>
                 {seats.map(s => <SeatItem key={s.id} seat={s} onUpdate={updateSeat} users={users} isEditMode={isEditMode} onStatusClick={(u) => setPresenceTarget(u)} />)}
               </Box>
               <Box
@@ -524,12 +524,12 @@ export default function App() {
                 }}
                 onMouseDown={handleHeightResizeStart}
               />
-              <Box flex={1} overflow="auto" p={2} bgcolor="background.paper">
+              <Box flex={1} overflow='auto' p={2} bgcolor='background.paper'>
                 <TextField
                   multiline
                   fullWidth
-                  variant="outlined"
-                  label="Notes"
+                  variant='outlined'
+                  label='Notes'
                   value={notes}
                   onChange={(e) => setNotes(e.target.value)}
                   onBlur={() => saveNotes(notes)}
@@ -548,7 +548,7 @@ export default function App() {
               }}
               onMouseDown={handleWidthResizeStart}
             />
-            <Box flex={1} borderLeft={1} borderColor="divider" sx={{ minWidth: 0 }}>
+            <Box flex={1} borderLeft={1} borderColor='divider' sx={{ minWidth: 0 }}>
               <DataGrid
                 rows={users}
                 columns={columns}
@@ -570,18 +570,18 @@ export default function App() {
         {/* Add Member Dialog */}
         <Dialog open={openAdd} onClose={() => setOpenAdd(false)}>
           <DialogTitle>Add New Member</DialogTitle>
-          <DialogContent><Box display="flex" flexDirection="column" gap={2} pt={1}>
-            <TextField label="Team" fullWidth value={newUser.team} onChange={e => setNewUser({ ...newUser, team: e.target.value })} />
-            <TextField label="Name" fullWidth value={newUser.name} onChange={e => setNewUser({ ...newUser, name: e.target.value })} />
+          <DialogContent><Box display='flex' flexDirection='column' gap={2} pt={1}>
+            <TextField label='Team' fullWidth value={newUser.team} onChange={e => setNewUser({ ...newUser, team: e.target.value })} />
+            <TextField label='Name' fullWidth value={newUser.name} onChange={e => setNewUser({ ...newUser, name: e.target.value })} />
           </Box></DialogContent>
-          <DialogActions><Button onClick={() => setOpenAdd(false)}>Cancel</Button><Button onClick={handleAddMember} variant="contained">Add</Button></DialogActions>
+          <DialogActions><Button onClick={() => setOpenAdd(false)}>Cancel</Button><Button onClick={handleAddMember} variant='contained'>Add</Button></DialogActions>
         </Dialog>
 
         {/* Dashboard Dialog */}
         <Dialog open={openAddDb} onClose={() => setOpenAddDb(false)}>
           <DialogTitle>New Dashboard</DialogTitle>
-          <DialogContent><Box pt={1}><TextField label="Dashboard Name" fullWidth autoFocus value={newDbName} onChange={e => setNewDbName(e.target.value)} /></Box></DialogContent>
-          <DialogActions><Button onClick={() => setOpenAddDb(false)}>Cancel</Button><Button onClick={handleAddDashboard} variant="contained" disabled={!newDbName}>Create</Button></DialogActions>
+          <DialogContent><Box pt={1}><TextField label='Dashboard Name' fullWidth autoFocus value={newDbName} onChange={e => setNewDbName(e.target.value)} /></Box></DialogContent>
+          <DialogActions><Button onClick={() => setOpenAddDb(false)}>Cancel</Button><Button onClick={handleAddDashboard} variant='contained' disabled={!newDbName}>Create</Button></DialogActions>
         </Dialog>
 
         {/* Edit Dashboard Settings Dialog */}
@@ -590,7 +590,7 @@ export default function App() {
           <DialogContent>
             <Box pt={1}>
               <TextField
-                label="Dashboard Name"
+                label='Dashboard Name'
                 fullWidth
                 autoFocus
                 value={editDbName}
@@ -600,7 +600,7 @@ export default function App() {
           </DialogContent>
           <DialogActions>
             <Button onClick={() => setOpenDbSettings(false)}>Cancel</Button>
-            <Button onClick={handleUpdateDashboard} variant="contained" color="primary" disabled={!editDbName}>
+            <Button onClick={handleUpdateDashboard} variant='contained' color='primary' disabled={!editDbName}>
               Save Changes
             </Button>
           </DialogActions>
