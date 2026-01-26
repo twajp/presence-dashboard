@@ -94,13 +94,13 @@ function SeatItem({ seat, onUpdate, users, isEditMode, onStatusClick }: {
         style={{
           width: 100, height: 50, backgroundColor: STATUS_CONFIG[seat.status].color,
           display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-          fontWeight: 'bold', cursor: isEditMode ? 'move' : 'pointer',
-          userSelect: 'none', position: 'absolute', color: '#fff', fontSize: 12,
+          cursor: isEditMode ? 'move' : 'pointer', 
+          userSelect: 'none', position: 'absolute', color: '#fff', fontSize: 16,
           outline: isEditMode ? '2px solid #2196f3' : 'none',
           boxShadow: '0 2px 6px rgba(0,0,0,0.3)', borderRadius: '4px', zIndex: isEditMode ? 100 : 1
         }}
       >
-        {user && <div style={{ fontSize: 14 }}>{user.name}</div>}
+        {user && <div >{user.name}</div>}
       </div>
     </Draggable>
   );
@@ -419,6 +419,7 @@ export default function App() {
           onClick={() => setPresenceTarget(p.row as User)}
           sx={{
             width: '100%',
+            height: '100%',
             backgroundColor: STATUS_CONFIG[p.row.presence as PresenceStatus].color,
             color: '#fff',
             '&:hover': { opacity: 0.8, backgroundColor: STATUS_CONFIG[p.row.presence as PresenceStatus].color }
@@ -550,6 +551,8 @@ export default function App() {
               <DataGrid
                 rows={users}
                 columns={columns}
+                columnHeaderHeight={28}
+                rowHeight={28}
                 processRowUpdate={async (n) => {
                   await updateSeat(n.id, { note1: n.note1, note2: n.note2, name: n.name, team: n.team });
                   return n;
@@ -567,8 +570,8 @@ export default function App() {
         <Dialog open={openAdd} onClose={() => setOpenAdd(false)}>
           <DialogTitle>Add New Member</DialogTitle>
           <DialogContent><Box display="flex" flexDirection="column" gap={2} pt={1}>
-            <TextField label="Name" fullWidth value={newUser.name} onChange={e => setNewUser({ ...newUser, name: e.target.value })} />
             <TextField label="Team" fullWidth value={newUser.team} onChange={e => setNewUser({ ...newUser, team: e.target.value })} />
+            <TextField label="Name" fullWidth value={newUser.name} onChange={e => setNewUser({ ...newUser, name: e.target.value })} />
           </Box></DialogContent>
           <DialogActions><Button onClick={() => setOpenAdd(false)}>Cancel</Button><Button onClick={handleAddMember} variant="contained">Add</Button></DialogActions>
         </Dialog>
