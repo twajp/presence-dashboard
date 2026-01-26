@@ -424,7 +424,7 @@ export default function App() {
             color: '#fff',
             '&:hover': { opacity: 0.8, backgroundColor: STATUS_CONFIG[p.row.presence as PresenceStatus].color }
           }}
-        > {p.row.presence} </Button>
+        > {STATUS_CONFIG[p.row.presence as PresenceStatus].label} </Button>
       ),
     },
     {
@@ -474,6 +474,7 @@ export default function App() {
                 labelId="db-select-label"
                 label="Select Dashboard"
                 value={dashboards.length > 0 ? dashboardId : ''}
+                disabled={isEditMode}
                 onChange={(e) => {
                   const val = Number(e.target.value);
                   setLoading(true);
