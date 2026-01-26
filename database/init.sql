@@ -5,7 +5,9 @@ CREATE TABLE IF NOT EXISTS dashboard_settings (
     name_label VARCHAR(50) CHARACTER SET utf8 DEFAULT 'Name',
     note1_label VARCHAR(50) CHARACTER SET utf8 DEFAULT 'Note 1',
     note2_label VARCHAR(50) CHARACTER SET utf8 DEFAULT 'Note 2',
-    split_position INT DEFAULT 40
+    grid_width INT DEFAULT 40,
+    grid_height INT DEFAULT 70,
+    notes TEXT CHARACTER SET utf8
 );
 
 CREATE TABLE IF NOT EXISTS user (

@@ -128,7 +128,9 @@ export default function App() {
     name_label: 'Name',
     note1_label: 'Note 1',
     note2_label: 'Note 2',
-    split_position: 40
+    grid_width: 40,
+    grid_height: 70,
+    notes: ''
   });
   const [editingHeader, setEditingHeader] = useState<string | null>(null);
 
@@ -136,8 +138,11 @@ export default function App() {
   const [openAddDb, setOpenAddDb] = useState(false);
   const [openDbSettings, setOpenDbSettings] = useState(false);
   const [presenceTarget, setPresenceTarget] = useState<User | null>(null);
-  const [isResizing, setIsResizing] = useState(false);
-  const [splitPosition, setSplitPosition] = useState(40);
+  const [isResizingWidth, setIsResizingWidth] = useState(false);
+  const [gridWidth, setGridWidth] = useState(40);
+  const [isResizingHeight, setIsResizingHeight] = useState(false);
+  const [gridHeight, setGridHeight] = useState(70);
+  const [notes, setNotes] = useState('');
 
   const [newUser, setNewUser] = useState({ name: '', team: '' });
   const [newDbName, setNewDbName] = useState('');
@@ -164,9 +169,13 @@ export default function App() {
         name_label: data.name_label || 'Name',
         note1_label: data.note1_label || 'Note 1',
         note2_label: data.note2_label || 'Note 2',
-        split_position: data.split_position ?? 40
+        grid_width: data.grid_width ?? 40,
+        grid_height: data.grid_height ?? 70,
+        notes: data.notes || ''
       });
-      setSplitPosition(data.split_position ?? 40);
+      setGridWidth(data.grid_width ?? 40);
+      setGridHeight(data.grid_height ?? 70);
+      setNotes(data.notes || '');
     } catch (err) { console.error(err); }
   }, [dashboardId]);
 
@@ -217,9 +226,9 @@ export default function App() {
     setEditingHeader(null);
   };
 
-  const saveSplitPosition = async (position: number) => {
+  const saveGridWidth = async (width: number) => {
     if (dashboardId === '') return;
-    const newHeaders = { ...headers, split_position: position };
+    const newHeaders = { ...headers, grid_width: width };
     setHeaders(newHeaders);
     await fetch(`${API_BASE_URL}/api/columns/${dashboardId}`, {
       method: 'PUT',
@@ -228,28 +237,68 @@ export default function App() {
     });
   };
 
-  const handleMouseDown = () => {
+  const handleWidthResizeStart = () => {
     if (!isEditMode) return;
-    setIsResizing(true);
+    setIsResizingWidth(true);
+  };
+
+  const handleHeightResizeStart = () => {
+    if (!isEditMode) return;
+    setIsResizingHeight(true);
   };
 
   const handleMouseMove = useCallback((e: MouseEvent) => {
-    if (!isResizing) return;
-    const newPosition = (e.clientX / window.innerWidth) * 100;
-    if (newPosition > 10 && newPosition < 90) {
-      setSplitPosition(newPosition);
+    if (isResizingWidth) {
+      const newWidth = (e.clientX / window.innerWidth) * 100;
+      if (newWidth > 10 && newWidth < 90) {
+        setGridWidth(newWidth);
+      }
+    } else if (isResizingHeight) {
+      const leftPanel = document.getElementById('left-panel');
+      if (leftPanel) {
+        const rect = leftPanel.getBoundingClientRect();
+        const newHeight = ((e.clientY - rect.top) / rect.height) * 100;
+        if (newHeight > 10 && newHeight < 90) {
+          setGridHeight(newHeight);
+        }
+      }
     }
-  }, [isResizing]);
+  }, [isResizingWidth, isResizingHeight]);
 
   const handleMouseUp = useCallback(() => {
-    if (isResizing) {
-      setIsResizing(false);
-      saveSplitPosition(splitPosition);
+    if (isResizingWidth) {
+      setIsResizingWidth(false);
+      saveGridWidth(gridWidth);
+    } else if (isResizingHeight) {
+      setIsResizingHeight(false);
+      saveGridHeight(gridHeight);
     }
-  }, [isResizing, splitPosition]);
+  }, [isResizingWidth, isResizingHeight, gridWidth, gridHeight]);
+
+  const saveGridHeight = async (height: number) => {
+    if (dashboardId === '') return;
+    const newHeaders = { ...headers, grid_height: height };
+    setHeaders(newHeaders);
+    await fetch(`${API_BASE_URL}/api/columns/${dashboardId}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(newHeaders),
+    });
+  };
+
+  const saveNotes = async (newNotes: string) => {
+    if (dashboardId === '') return;
+    const newHeaders = { ...headers, notes: newNotes };
+    setHeaders(newHeaders);
+    await fetch(`${API_BASE_URL}/api/columns/${dashboardId}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(newHeaders),
+    });
+  };
 
   useEffect(() => {
-    if (isResizing) {
+    if (isResizingWidth || isResizingHeight) {
       document.addEventListener('mousemove', handleMouseMove);
       document.addEventListener('mouseup', handleMouseUp);
       return () => {
@@ -257,7 +306,7 @@ export default function App() {
         document.removeEventListener('mouseup', handleMouseUp);
       };
     }
-  }, [isResizing, handleMouseMove, handleMouseUp]);
+  }, [isResizingWidth, isResizingHeight, handleMouseMove, handleMouseUp]);
 
   const handleMove = async (index: number, direction: 'up' | 'down') => {
     const targetIndex = direction === 'up' ? index - 1 : index + 1;
@@ -459,18 +508,43 @@ export default function App() {
 
         {loading && dashboardId !== '' ? <Box flex={1} display="flex" justifyContent="center" alignItems="center"><CircularProgress /></Box> : (
           <Box display="flex" flex={1} overflow="hidden">
-            <Box width={`${splitPosition}%`} position="relative" sx={{ backgroundImage: isEditMode ? `radial-gradient(${theme.palette.divider} 1px, transparent 1px)` : 'none', backgroundSize: '20px 20px', overflow: 'auto', bgcolor: 'background.default' }}>
-              {seats.map(s => <SeatItem key={s.id} seat={s} onUpdate={updateSeat} users={users} isEditMode={isEditMode} onStatusClick={(u) => setPresenceTarget(u)} />)}
+            <Box id="left-panel" width={`${gridWidth}%`} display="flex" flexDirection="column" overflow="hidden">
+              <Box height={`${gridHeight}%`} position="relative" sx={{ backgroundImage: isEditMode ? `radial-gradient(${theme.palette.divider} 1px, transparent 1px)` : 'none', backgroundSize: '20px 20px', overflow: 'auto', bgcolor: 'background.default' }}>
+                {seats.map(s => <SeatItem key={s.id} seat={s} onUpdate={updateSeat} users={users} isEditMode={isEditMode} onStatusClick={(u) => setPresenceTarget(u)} />)}
+              </Box>
+              <Box
+                sx={{
+                  height: '5px',
+                  cursor: isEditMode ? 'row-resize' : 'default',
+                  bgcolor: isResizingHeight ? 'primary.main' : 'divider',
+                  '&:hover': isEditMode ? { bgcolor: 'primary.main' } : {},
+                  transition: 'background-color 0.2s'
+                }}
+                onMouseDown={handleHeightResizeStart}
+              />
+              <Box flex={1} overflow="auto" p={2} bgcolor="background.paper">
+                <TextField
+                  multiline
+                  fullWidth
+                  variant="outlined"
+                  label="Notes"
+                  value={notes}
+                  onChange={(e) => setNotes(e.target.value)}
+                  onBlur={() => saveNotes(notes)}
+                  minRows={4}
+                  sx={{ height: '100%', '& .MuiInputBase-root': { height: '100%', alignItems: 'flex-start' } }}
+                />
+              </Box>
             </Box>
             <Box
               sx={{
                 width: '5px',
                 cursor: isEditMode ? 'col-resize' : 'default',
-                bgcolor: isResizing ? 'primary.main' : 'divider',
+                bgcolor: isResizingWidth ? 'primary.main' : 'divider',
                 '&:hover': isEditMode ? { bgcolor: 'primary.main' } : {},
                 transition: 'background-color 0.2s'
               }}
-              onMouseDown={handleMouseDown}
+              onMouseDown={handleWidthResizeStart}
             />
             <Box flex={1} borderLeft={1} borderColor="divider">
               <DataGrid
