@@ -24,7 +24,7 @@ type User = {
 };
 type Seat = { id: number; x: number; y: number; status: PresenceStatus; userId?: number; };
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+const API_BASE_URL = import.meta.env.VITE_API_URL || (import.meta.env.MODE === 'production' ? '' : 'http://localhost:3000');
 
 const STATUS_CONFIG: Record<PresenceStatus, { color: string; label: string }> = {
   present: { color: '#4caf50', label: 'Present' },
@@ -94,7 +94,7 @@ function SeatItem({ seat, onUpdate, users, isEditMode, onStatusClick }: {
         style={{
           width: 100, height: 50, backgroundColor: STATUS_CONFIG[seat.status].color,
           display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-          cursor: isEditMode ? 'move' : 'pointer', 
+          cursor: isEditMode ? 'move' : 'pointer',
           userSelect: 'none', position: 'absolute', color: '#fff', fontSize: 16,
           outline: isEditMode ? '2px solid #2196f3' : 'none',
           boxShadow: '0 2px 6px rgba(0,0,0,0.3)', borderRadius: '4px', zIndex: isEditMode ? 100 : 1

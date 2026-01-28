@@ -1,0 +1,80 @@
+services:
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.prod
+    container_name: frontend-prod
+    restart: always
+    expose:
+      - "80"
+    environment:
+      TZ: ${TZ}
+    healthcheck:
+      test: [ "CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:80" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.prod
+    container_name: backend-prod
+    restart: always
+    expose:
+      - "3000"
+    environment:
+      TZ: ${TZ}
+      DB_HOST: ${DB_HOST}
+      DB_USER: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
+      DB_NAME: ${DB_NAME}
+    healthcheck:
+      test: [ "CMD", "node", "-e", "fetch('http://localhost:3000/health').then(r => r.ok ? process.exit(0) : process.exit(1))" ]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    depends_on:
+      database:
+        condition: service_healthy
+
+  database:
+    build: ./database
+    container_name: mysql-prod
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${DB_NAME}
+      MYSQL_USER: ${DB_USER}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
+      TZ: ${TZ}
+    volumes:
+      - mysql-data:/var/lib/mysql
+    healthcheck:
+      test: [ "CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "${DB_USER}", "-p${DB_PASSWORD}" ]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  nginx:
+    image: nginx:alpine
+    container_name: nginx-prod
+    restart: always
+    ports:
+      - "${HTTPS_PORT:-443}:443"
+      - "${HTTP_PORT:-80}:80"
+    environment:
+      - SSL_CERT_FILE=${SSL_CERT_FILE}
+      - SSL_CERT_KEY_FILE=${SSL_CERT_KEY_FILE}
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ${SSL_CERT_DIR}/${SSL_CERT_FILE}:/etc/nginx/certs/cert.pem:ro
+      - ${SSL_CERT_DIR}/${SSL_CERT_KEY_FILE}:/etc/nginx/certs/key.pem:ro
+    depends_on:
+      frontend:
+        condition: service_healthy
+      backend:
+        condition: service_healthy
+
+volumes:
+  mysql-data:
