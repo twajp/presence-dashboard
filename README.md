@@ -1,6 +1,6 @@
 # Presence Dashboard
 A dynamic, real-time presence management application built with React, Material UI, and React Draggable. This dashboard allows teams to visualize member status through both a grid-based list and a customizable 2D floor plan.  
-## 🚀 Features
+## Features
 - Dual View System: * Interactive Map: Drag-and-drop seating arrangement with a dot-grid background for precision.  
   - Data Grid: A robust table view powered by MUI X DataGrid for quick editing and sorting.  
 - Presence Management: Toggle between `Present`, `Remote`, `Trip`, and `Off` with color-coded visual cues.  
@@ -10,21 +10,48 @@ A dynamic, real-time presence management application built with React, Material 
 - Real-time Synchronization: Auto-polls the backend every 10 seconds (when not in edit mode) to keep status updates fresh across all clients.  
 - Theme Aware: Built-in support for Dark/Light mode based on system preferences.
 
-## 🛠️ Tech Stack
+## Tech Stack
 - Framework: React (Vite)
 - UI Library: Material UI (MUI)
 - Components: `@mui/x-data-grid` for the tabular view.
-    - `react-draggable` for seat positioning.
+  - `react-draggable` for seat positioning.
 - State Management: React Hooks (useCallback, useMemo, useRef).
 - Icons: MUI Icons.
 
-## 📦 How to Launch
-The easiest way to get started is using Docker:  
+# How to Launch
+## Prerequisites
+Copy [`.env.example`](.env.example) to `.env` and configure the environment variables:
 ```bash
-docker compose up -d
+cp .env.example .env
+```
+Then edit `.env` with your specific configuration.
+
+## Local Development
+```bash
+docker compose up --build
 ```
 
-## 🖥️ Usage Guide
+## Production Deployment
+### SSL Certificate Setup
+Before deploying to production, place your SSL certificate files in the directory specified in `.env`:
+
+1. Create the certificate directory:
+```bash
+mkdir certs
+```
+
+2. Place your SSL certificate and key files in the `certs/` directory.
+
+3. Update the `.env` file with your certificate file names:
+
+### Deploy
+```bash
+docker compose -f docker-compose.prod.yml up --build -d
+```
+
+The application will be accessible via HTTPS on the port specified by `HTTPS_PORT` in `.env` (default: 443). HTTP requests on the port specified by `HTTP_PORT` (default: 80) will be automatically redirected to HTTPS.
+
+## Usage Guide
 ### Managing Presence
 - **View Mode**: Click on any user’s name in the map or their status button in the table to open the status selector dialog.
 - **Notes**: Double-click cells in the "Note" columns within the table to update information on the fly.
