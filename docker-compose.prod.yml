@@ -3,7 +3,7 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile.prod
-    container_name: frontend-prod
+    container_name: presence-dashboard-frontend-prod
     restart: always
     expose:
       - "80"
@@ -19,7 +19,7 @@ services:
     build:
       context: ./backend
       dockerfile: Dockerfile.prod
-    container_name: backend-prod
+    container_name: presence-dashboard-backend-prod
     restart: always
     expose:
       - "3000"
@@ -40,7 +40,7 @@ services:
 
   database:
     build: ./database
-    container_name: mysql-prod
+    container_name: presence-dashboard-database-prod
     restart: always
     environment:
       MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
@@ -58,7 +58,7 @@ services:
 
   nginx:
     image: nginx:alpine
-    container_name: nginx-prod
+    container_name: presence-dashboard-nginx-prod
     restart: always
     ports:
       - "${HTTPS_PORT:-443}:443"

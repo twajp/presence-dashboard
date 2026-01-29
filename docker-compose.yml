@@ -1,7 +1,7 @@
 services:
   frontend:
     build: ./frontend
-    container_name: frontend-dev
+    container_name: presence-dashboard-frontend-dev
     ports:
       - 5173:5173
     environment:
@@ -16,7 +16,7 @@ services:
 
   backend:
     build: ./backend
-    container_name: backend-dev
+    container_name: presence-dashboard-backend-dev
     ports:
       - 3000:3000
     environment:
@@ -40,7 +40,7 @@ services:
 
   database:
     build: ./database
-    container_name: mysql-dev
+    container_name: presence-dashboard-database-dev
     environment:
       MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
       MYSQL_DATABASE: ${DB_NAME}
