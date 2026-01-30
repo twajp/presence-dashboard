@@ -84,14 +84,14 @@ app.get('/health', async (req, res) => {
         });
 
         app.get('/api/users/:dashboardId', async (req, res) => {
-            const [rows] = await connection.execute('SELECT * FROM user WHERE dashboard_id = ? ORDER BY `order` ASC', [req.params.dashboardId]);
+            const [rows] = await connection.execute('SELECT * FROM users WHERE dashboard_id = ? ORDER BY `order` ASC', [req.params.dashboardId]);
             res.json(rows);
         });
 
         app.put('/api/users/:id', async (req, res) => {
             const { name, presence, note1, note2, x, y, order } = req.body;
             await connection.execute(
-                'UPDATE user SET name=?, presence=?, note1=?, note2=?, x=?, y=?, `order`=? WHERE id=?',
+                'UPDATE users SET name=?, presence=?, note1=?, note2=?, x=?, y=?, `order`=? WHERE id=?',
                 [name, presence, note1, note2, x, y, order, req.params.id]
             );
             res.json({ success: true });
@@ -100,14 +100,14 @@ app.get('/health', async (req, res) => {
         app.post('/api/users', async (req, res) => {
             const { team, name, presence, dashboard_id, x, y, order } = req.body;
             const [result] = await connection.execute(
-                'INSERT INTO user (team, name, presence, dashboard_id, x, y, `order`) VALUES (?, ?, ?, ?, ?, ?, ?)',
+                'INSERT INTO users (team, name, presence, dashboard_id, x, y, `order`) VALUES (?, ?, ?, ?, ?, ?, ?)',
                 [team, name, presence, dashboard_id, x, y, order]
             );
             res.json({ success: true, id: (result as any).insertId });
         });
 
         app.delete('/api/users/:id', async (req, res) => {
-            await connection.execute('DELETE FROM user WHERE id = ?', [req.params.id]);
+            await connection.execute('DELETE FROM users WHERE id = ?', [req.params.id]);
             res.json({ success: true });
         });
 
@@ -115,14 +115,14 @@ app.get('/health', async (req, res) => {
             console.log(`✅ Server running on http://localhost:${PORT}`);
             console.log(`📊 GET /api/dashboards - Get dashboard list`);
             console.log(`➕ POST /api/dashboards - Create dashboard`);
-            console.log(`✏️ PUT /api/dashboards/:id - Update dashboard`);
+            console.log(`✏️  PUT /api/dashboards/:id - Update dashboard`);
             console.log(`📋 GET /api/columns/:dashboardId - Get dashboard columns`);
-            console.log(`✏️ PUT /api/columns/:dashboardId - Update dashboard columns`);
+            console.log(`✏️  PUT /api/columns/:dashboardId - Update dashboard columns`);
             console.log(`👥 GET /api/users - Get user list`);
             console.log(`👤 GET /api/users/:dashboardId - Get users by dashboard`);
-            console.log(`✏️ PUT /api/users/:id - Update user`);
+            console.log(`✏️  PUT /api/users/:id - Update user`);
             console.log(`➕ POST /api/users - Create user`);
-            console.log(`🗑️ DELETE /api/users/:id - Delete user`);
+            console.log(`🗑️  DELETE /api/users/:id - Delete user`);
         });
     } catch (error) {
         console.error('❌ Failed to start server:', error);

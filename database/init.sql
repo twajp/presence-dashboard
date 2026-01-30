@@ -10,7 +10,7 @@ CREATE TABLE IF NOT EXISTS dashboard_settings (
     notes TEXT CHARACTER SET utf8
 );
 
-CREATE TABLE IF NOT EXISTS user (
+CREATE TABLE IF NOT EXISTS users (
     id INT AUTO_INCREMENT PRIMARY KEY,
     team VARCHAR(50) CHARACTER SET utf8,
     name VARCHAR(50) CHARACTER SET utf8 NOT NULL,
@@ -25,9 +25,10 @@ CREATE TABLE IF NOT EXISTS user (
     y INT
 );
 
-INSERT INTO dashboard_settings (dashboard_name) VALUES ('テスト在籍表');
+INSERT INTO dashboard_settings (dashboard_name, team_label, name_label, note1_label, note2_label, grid_width, grid_height, notes) VALUES
+('テスト在籍表', 'Team', 'Name', 'Note 1', 'Note 2', 40, 70, NULL);
 
-INSERT INTO user (team, name, presence, note1, note2, check1, check2, `order`, dashboard_id, x, y) VALUES 
+INSERT INTO users (team, name, presence, note1, note2, check1, check2, `order`, dashboard_id, x, y) VALUES 
 ('織田軍', '織田 信長', 'present', NULL, NULL, TRUE, TRUE, 1, 1, 20, 50),
 ('織田軍', '柴田 勝家', 'present', NULL, NULL, TRUE, FALSE, 2, 1, 130, 20),
 ('織田軍', '丹羽 長秀', 'present', NULL, NULL, TRUE, TRUE, 3, 1, 240, 20),
