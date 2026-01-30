@@ -33,16 +33,13 @@ docker compose up --build
 
 ## Production Deployment
 ### SSL Certificate Setup
-Before deploying to production, place your SSL certificate files in the directory specified in `.env`:
-
+Before deploying to production, place your SSL certificate files in the directory specified in `.env`:  
 1. Create the certificate directory:
-```bash
-mkdir certs
-```
-
-2. Place your SSL certificate and key files in the `certs/` directory.
-
-3. Update the `.env` file with your certificate file names:
+   ```bash
+   mkdir certs
+   ```
+1. Place your SSL certificate and key files in the `certs/` directory.
+1. Update the `.env` file with your certificate file names:
 
 ### Deploy
 ```bash
@@ -62,4 +59,3 @@ The application will be accessible via HTTPS on the port specified by `HTTPS_POR
 1. **Add/Remove**: Use the "Add Member" button or the red trash icon in the "Actions" column.
 1. **Reorder**: Use the up/down arrows in the table to change the display order of team members.
 1. **Rename Headers**: In edit mode, click on column headers to rename them.
-
