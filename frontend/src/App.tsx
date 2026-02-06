@@ -555,7 +555,7 @@ export default function App() {
                 columnHeaderHeight={28}
                 rowHeight={28}
                 processRowUpdate={async (n) => {
-                  await updateSeat(n.id, { note1: n.note1, note2: n.note2, name: n.name, team: n.team });
+                  await updateSeat(n.id, { team: n.team, name: n.name, note1: n.note1, note2: n.note2 });
                   return n;
                 }}
                 hideFooter
