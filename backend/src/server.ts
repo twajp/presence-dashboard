@@ -89,10 +89,10 @@ app.get('/health', async (req, res) => {
         });
 
         app.put('/api/users/:id', async (req, res) => {
-            const { name, presence, note1, note2, x, y, order } = req.body;
+            const { team, name, presence, note1, note2, x, y, order } = req.body;
             await connection.execute(
-                'UPDATE users SET name=?, presence=?, note1=?, note2=?, x=?, y=?, `order`=? WHERE id=?',
-                [name, presence, note1, note2, x, y, order, req.params.id]
+                'UPDATE users SET team=?, name=?, presence=?, note1=?, note2=?, x=?, y=?, `order`=? WHERE id=?',
+                [team, name, presence, note1, note2, x, y, order, req.params.id]
             );
             res.json({ success: true });
         });
