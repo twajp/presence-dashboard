@@ -3,7 +3,7 @@ import Draggable from 'react-draggable';
 import { DataGrid } from '@mui/x-data-grid';
 import type { GridColDef } from '@mui/x-data-grid';
 import {
-  Button, CircularProgress, Box, Switch, FormControlLabel, ThemeProvider,
+  Button, CircularProgress, Box, ThemeProvider,
   createTheme, CssBaseline, useMediaQuery, Select, MenuItem, FormControl,
   InputLabel, Typography, IconButton, Dialog, DialogTitle, DialogContent,
   TextField, DialogActions, Stack, Tooltip
@@ -14,6 +14,8 @@ import ArrowUpwardIcon from '@mui/icons-material/ArrowUpward';
 import ArrowDownwardIcon from '@mui/icons-material/ArrowDownward';
 import DashboardCustomizeIcon from '@mui/icons-material/DashboardCustomize';
 import SettingsIcon from '@mui/icons-material/Settings';
+import EditIcon from '@mui/icons-material/Edit';
+import CheckIcon from '@mui/icons-material/Check';
 
 type PresenceStatus = 'present' | 'remote' | 'trip' | 'off';
 type Dashboard = { id: number; dashboard_name: string; };
@@ -502,9 +504,39 @@ export default function App() {
             )}
           </Box>
 
-          <Box display='flex' gap={2}>
-            {isEditMode && <Button startIcon={<AddIcon />} variant='contained' onClick={() => setOpenAdd(true)}>Add Member</Button>}
-            <FormControlLabel control={<Switch checked={isEditMode} onChange={(e) => { setIsEditMode(e.target.checked); setEditingHeader(null); }} />} label={isEditMode ? 'Edit Mode' : 'View Mode'} />
+          <Box display='flex' gap={1} alignItems='center'>
+            {isEditMode ? (
+              <>
+                <Button
+                  startIcon={<AddIcon />}
+                  variant='outlined'
+                  size="small"
+                  onClick={() => setOpenAdd(true)}
+                >
+                  Add Member
+                </Button>
+                <Button
+                  startIcon={<CheckIcon />}
+                  variant='contained'
+                  color='primary'
+                  size="small"
+                  onClick={() => { setIsEditMode(false); setEditingHeader(null); }}
+                  sx={{ minWidth: '80px' }}
+                >
+                  Done
+                </Button>
+              </>
+            ) : (
+              <Button
+                startIcon={<EditIcon />}
+                variant='outlined'
+                size="small"
+                onClick={() => setIsEditMode(true)}
+                sx={{ minWidth: '80px' }}
+              >
+                Edit
+              </Button>
+            )}
           </Box>
         </Box>
 
