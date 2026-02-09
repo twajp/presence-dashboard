@@ -25,6 +25,7 @@ type User = {
   check1?: boolean; check2?: boolean; check3?: boolean;
   x: number; y: number;
   team?: string; dashboard_id?: number; order: number;
+  updated_at?: string;
 };
 type Seat = { id: number; x: number; y: number; status: PresenceStatus; userId?: number; };
 
@@ -136,6 +137,7 @@ export default function App() {
     check1_label: 'Check 1',
     check2_label: 'Check 2',
     check3_label: 'Check 3',
+    updated_at_label: 'Last Updated',
     grid_width: 40,
     grid_height: 70,
     notes: ''
@@ -181,6 +183,7 @@ export default function App() {
         check1_label: data.check1_label || 'Check 1',
         check2_label: data.check2_label || 'Check 2',
         check3_label: data.check3_label || 'Check 3',
+        updated_at_label: data.updated_at_label || 'Last Updated',
         grid_width: data.grid_width ?? 40,
         grid_height: data.grid_height ?? 70,
         notes: data.notes || ''
@@ -217,15 +220,18 @@ export default function App() {
     const user = users.find((u) => u.id === id);
     if (!user) return;
     const payload = { ...user, ...data };
-    await fetch(`${API_BASE_URL}/api/users/${id}`, {
+    const response = await fetch(`${API_BASE_URL}/api/users/${id}`, {
       method: 'PUT', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),
     });
-    setUsers(prev => {
-      const updated = prev.map(u => u.id === id ? { ...u, ...data } : u);
-      return updated.sort((a, b) => a.order - b.order);
-    });
-    setSeats(prev => prev.map(s => s.id === id ? { ...s, status: data.presence || s.status, x: data.x ?? s.x, y: data.y ?? s.y } : s));
+    const result = await response.json();
+    if (result.user) {
+      setUsers(prev => {
+        const updated = prev.map(u => u.id === id ? result.user : u);
+        return updated.sort((a, b) => a.order - b.order);
+      });
+      setSeats(prev => prev.map(s => s.id === id ? { ...s, status: result.user.presence || s.status, x: result.user.x ?? s.x, y: result.user.y ?? s.y } : s));
+    }
   }, [users]);
 
   const saveHeader = async (newHeaders: typeof headers) => {
@@ -499,6 +505,19 @@ export default function App() {
         </Box>
       ),
     },
+    {
+      field: 'updated_at', headerName: headers.updated_at_label, width: 150,
+      editable: false, sortable: false, disableColumnMenu: true,
+      renderHeader: () => <EditableHeader label={headers.updated_at_label} fieldKey='updated_at_label' />,
+      renderCell: (p) => {
+        if (!p.row.updated_at) return null;
+        const date = new Date(p.row.updated_at);
+        return date.toLocaleString('ja-JP', {
+          year: 'numeric', month: '2-digit', day: '2-digit',
+          hour: '2-digit', minute: '2-digit'
+        });
+      },
+    },
     ...(isEditMode ? [{
       field: 'actions', headerName: 'Actions', width: 140, sortable: false, disableColumnMenu: true,
       renderCell: (p: any) => {
@@ -647,7 +666,7 @@ export default function App() {
                 columnHeaderHeight={28}
                 rowHeight={28}
                 processRowUpdate={async (n) => {
-                  await updateSeat(n.id, { team: n.team, name: n.name, note1: n.note1, note2: n.note2 , note3: n.note3});
+                  await updateSeat(n.id, { team: n.team, name: n.name, note1: n.note1, note2: n.note2, note3: n.note3 });
                   return n;
                 }}
                 hideFooter
