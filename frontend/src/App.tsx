@@ -131,6 +131,7 @@ export default function App() {
   const [headers, setHeaders] = useState({
     team_label: 'Team',
     name_label: 'Name',
+    presence_label: 'Status',
     note1_label: 'Note 1',
     note2_label: 'Note 2',
     note3_label: 'Note 3',
@@ -184,6 +185,7 @@ export default function App() {
       setHeaders({
         team_label: data.team_label || 'Team',
         name_label: data.name_label || 'Name',
+        presence_label: data.presence_label || 'Status',
         note1_label: data.note1_label || 'Note 1',
         note2_label: data.note2_label || 'Note 2',
         note3_label: data.note3_label || 'Note 3',
@@ -460,7 +462,8 @@ export default function App() {
       renderHeader: () => <EditableHeader label={headers.name_label} fieldKey='name_label' />
     },
     {
-      field: 'presence', headerName: 'Status', width: 100, sortable: false, disableColumnMenu: true,
+      field: 'presence', headerName: headers.presence_label, width: 100, sortable: false, disableColumnMenu: true,
+      renderHeader: () => <EditableHeader label={headers.presence_label} fieldKey='presence_label' />,
       renderCell: (p) => (
         <Button size='small' variant='contained' disabled={isEditMode}
           onClick={() => setPresenceTarget(p.row as User)}
