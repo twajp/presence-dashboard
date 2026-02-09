@@ -512,10 +512,15 @@ export default function App() {
       renderCell: (p) => {
         if (!p.row.updated_at) return null;
         const date = new Date(p.row.updated_at);
-        return date.toLocaleString('ja-JP', {
-          year: 'numeric', month: '2-digit', day: '2-digit',
-          hour: '2-digit', minute: '2-digit'
-        });
+        const isToday = date.toDateString() === new Date().toDateString();
+        return (
+          <span style={{ color: isToday ? 'inherit' : 'gray' }}>
+            {date.toLocaleString('ja-JP', {
+              month: '2-digit', day: '2-digit',
+              hour: '2-digit', minute: '2-digit'
+            })}
+          </span>
+        );
       },
     },
     ...(isEditMode ? [{
