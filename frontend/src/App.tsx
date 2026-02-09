@@ -539,7 +539,7 @@ export default function App() {
       ),
     }] : []),
     ...(!headers.hide_updated_at || isEditMode ? [{
-      field: 'updated_at', headerName: headers.updated_at_label, width: 150,
+      field: 'updated_at', headerName: headers.updated_at_label, width: 100,
       editable: false, sortable: false, disableColumnMenu: true,
       renderHeader: () => <EditableHeader label={headers.updated_at_label} fieldKey='updated_at_label' hideFieldKey='hide_updated_at' />,
       renderCell: (p: any) => {
