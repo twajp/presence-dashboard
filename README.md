@@ -18,30 +18,33 @@ A dynamic, real-time presence management application built with React, Material 
 - State Management: React Hooks (useCallback, useMemo, useRef).
 - Icons: MUI Icons.
 
-# How to Launch
-## Prerequisites
+## How to Launch
+### Prerequisites
 Copy [`.env.example`](.env.example) to `.env` and configure the environment variables:
 ```bash
 cp .env.example .env
 ```
 Then edit `.env` with your specific configuration.
 
-## Local Development
+### Local Development
 ```bash
 docker compose up --build
 ```
 
-## Production Deployment
-### SSL Certificate Setup
-Before deploying to production, place your SSL certificate files in the directory specified in `.env`:  
-1. Create the certificate directory:
+### Production Deployment
+#### SSL Certificate Setup
+Before deploying to production, generate your SSL certificate files and store them in the directory specified in the `.env` file.
+1. Create a directory for the certificates:
    ```bash
    mkdir certs
    ```
-1. Place your SSL certificate and key files in the `certs/` directory.
-1. Update the `.env` file with your certificate file names:
+1. Generate your SSL certificate and private key files in the `certs/` directory:
+   ```bash
+   openssl req -x509 -newkey rsa:4096 -keyout certs/key.pem -out certs/cert.pem -sha256 -days 3650 -nodes
+   ```
+1. Edit the `.env` file to specify the certificate file names.
 
-### Deploy
+#### Deploy
 ```bash
 docker compose -f docker-compose.prod.yml up --build -d
 ```
@@ -65,7 +68,7 @@ The application will be accessible via HTTPS on the port specified by `HTTPS_POR
 ### Response Format
 All API responses follow a consistent format:
 
-**Success Response:**
+#### Success Response:
 ```json
 {
   "success": true,
@@ -73,7 +76,7 @@ All API responses follow a consistent format:
 }
 ```
 
-**Error Response:**
+#### Error Response:
 ```json
 {
   "success": false,
