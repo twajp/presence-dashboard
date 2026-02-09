@@ -71,11 +71,31 @@ app.get('/health', async (req, res) => {
 
         app.get('/api/columns/:dashboardId', async (req, res) => {
             const [rows]: any = await connection.execute('SELECT * FROM dashboard_settings WHERE id = ?', [req.params.dashboardId]);
-            res.json(rows[0] || { team_label: 'Team', name_label: 'Name', note1_label: 'Note 1', note2_label: 'Note 2', note3_label: 'Note 3', check1_label: 'Check 1', check2_label: 'Check 2', check3_label: 'Check 3', updated_at_label: 'Last Updated', grid_width: 40, grid_height: 70, notes: '' });
+            res.json(rows[0] || {
+                team_label: 'Team',
+                name_label: 'Name',
+                note1_label: 'Note 1',
+                note2_label: 'Note 2',
+                note3_label: 'Note 3',
+                check1_label: 'Check 1',
+                check2_label: 'Check 2',
+                check3_label: 'Check 3',
+                updated_at_label: 'Last Updated',
+                hide_note1: false,
+                hide_note2: false,
+                hide_note3: false,
+                hide_check1: false,
+                hide_check2: false,
+                hide_check3: false,
+                hide_updated_at: false,
+                grid_width: 40,
+                grid_height: 70,
+                notes: ''
+            });
         });
 
         app.put('/api/columns/:dashboardId', async (req, res) => {
-            const { team_label, name_label, note1_label, note2_label, note3_label, check1_label, check2_label, check3_label, updated_at_label, grid_width, grid_height, notes } = req.body;
+            const { team_label, name_label, note1_label, note2_label, note3_label, check1_label, check2_label, check3_label, updated_at_label, hide_note1, hide_note2, hide_note3, hide_check1, hide_check2, hide_check3, hide_updated_at, grid_width, grid_height, notes } = req.body;
             const values = [
                 req.params.dashboardId,
                 team_label ?? null,
@@ -87,12 +107,19 @@ app.get('/health', async (req, res) => {
                 check2_label ?? null,
                 check3_label ?? null,
                 updated_at_label ?? null,
+                hide_note1 ?? false,
+                hide_note2 ?? false,
+                hide_note3 ?? false,
+                hide_check1 ?? false,
+                hide_check2 ?? false,
+                hide_check3 ?? false,
+                hide_updated_at ?? false,
                 grid_width ?? null,
                 grid_height ?? null,
                 notes ?? null
             ];
             await connection.execute(
-                'INSERT INTO dashboard_settings (id, team_label, name_label, note1_label, note2_label, note3_label, check1_label, check2_label, check3_label, updated_at_label, grid_width, grid_height, notes) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE team_label=?, name_label=?, note1_label=?, note2_label=?, note3_label=?, check1_label=?, check2_label=?, check3_label=?, updated_at_label=?, grid_width=?, grid_height=?, notes=?',
+                'INSERT INTO dashboard_settings (id, team_label, name_label, note1_label, note2_label, note3_label, check1_label, check2_label, check3_label, updated_at_label, hide_note1, hide_note2, hide_note3, hide_check1, hide_check2, hide_check3, hide_updated_at, grid_width, grid_height, notes) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE team_label=?, name_label=?, note1_label=?, note2_label=?, note3_label=?, check1_label=?, check2_label=?, check3_label=?, updated_at_label=?, hide_note1=?, hide_note2=?, hide_note3=?, hide_check1=?, hide_check2=?, hide_check3=?, hide_updated_at=?, grid_width=?, grid_height=?, notes=?',
                 [...values, ...values.slice(1)]
             );
             res.json({ success: true });

@@ -138,6 +138,13 @@ export default function App() {
     check2_label: 'Check 2',
     check3_label: 'Check 3',
     updated_at_label: 'Last Updated',
+    hide_note1: false,
+    hide_note2: false,
+    hide_note3: false,
+    hide_check1: false,
+    hide_check2: false,
+    hide_check3: false,
+    hide_updated_at: false,
     grid_width: 40,
     grid_height: 70,
     notes: ''
@@ -184,6 +191,13 @@ export default function App() {
         check2_label: data.check2_label || 'Check 2',
         check3_label: data.check3_label || 'Check 3',
         updated_at_label: data.updated_at_label || 'Last Updated',
+        hide_note1: data.hide_note1 ?? false,
+        hide_note2: data.hide_note2 ?? false,
+        hide_note3: data.hide_note3 ?? false,
+        hide_check1: data.hide_check1 ?? false,
+        hide_check2: data.hide_check2 ?? false,
+        hide_check3: data.hide_check3 ?? false,
+        hide_updated_at: data.hide_updated_at ?? false,
         grid_width: data.grid_width ?? 40,
         grid_height: data.grid_height ?? 70,
         notes: data.notes || ''
@@ -384,7 +398,7 @@ export default function App() {
     fetchDashboards();
   };
 
-  const EditableHeader = ({ label, fieldKey }: { label: string, fieldKey: keyof typeof headers }) => {
+  const EditableHeader = ({ label, fieldKey, hideFieldKey }: { label: string, fieldKey: keyof typeof headers, hideFieldKey?: keyof typeof headers }) => {
     const [tempValue, setTempValue] = useState(label);
     if (isEditMode && editingHeader === fieldKey) {
       return (
@@ -411,10 +425,25 @@ export default function App() {
     }
     return (
       <Box
-        sx={{ cursor: isEditMode ? 'pointer' : 'inherit', width: '100%' }}
+        sx={{ cursor: isEditMode ? 'pointer' : 'inherit', width: '100%', display: 'flex', alignItems: 'center', gap: 0.5 }}
         onClick={() => isEditMode && setEditingHeader(fieldKey)}
       >
         {label}
+        {isEditMode && hideFieldKey && (
+          <input
+            type='checkbox'
+            checked={!headers[hideFieldKey]}
+            onChange={(e) => {
+              e.stopPropagation();
+              const next = { ...headers, [hideFieldKey]: !e.target.checked };
+              setHeaders(next);
+              saveHeader(next);
+            }}
+            onClick={(e) => e.stopPropagation()}
+            title='Show/Hide'
+            style={{ width: 14, height: 14, cursor: 'pointer' }}
+          />
+        )}
       </Box>
     );
   };
@@ -445,26 +474,26 @@ export default function App() {
         > {STATUS_CONFIG[p.row.presence as PresenceStatus].label} </Button>
       ),
     },
-    {
+    ...(!headers.hide_note1 || isEditMode ? [{
       field: 'note1', headerName: headers.note1_label, flex: 1,
       editable: true, sortable: false, disableColumnMenu: true,
-      renderHeader: () => <EditableHeader label={headers.note1_label} fieldKey='note1_label' />
-    },
-    {
+      renderHeader: () => <EditableHeader label={headers.note1_label} fieldKey='note1_label' hideFieldKey='hide_note1' />
+    }] : []),
+    ...(!headers.hide_note2 || isEditMode ? [{
       field: 'note2', headerName: headers.note2_label, flex: 1,
       editable: true, sortable: false, disableColumnMenu: true,
-      renderHeader: () => <EditableHeader label={headers.note2_label} fieldKey='note2_label' />
-    },
-    {
+      renderHeader: () => <EditableHeader label={headers.note2_label} fieldKey='note2_label' hideFieldKey='hide_note2' />
+    }] : []),
+    ...(!headers.hide_note3 || isEditMode ? [{
       field: 'note3', headerName: headers.note3_label, flex: 1,
       editable: true, sortable: false, disableColumnMenu: true,
-      renderHeader: () => <EditableHeader label={headers.note3_label} fieldKey='note3_label' />
-    },
-    {
+      renderHeader: () => <EditableHeader label={headers.note3_label} fieldKey='note3_label' hideFieldKey='hide_note3' />
+    }] : []),
+    ...(!headers.hide_check1 || isEditMode ? [{
       field: 'check1', headerName: headers.check1_label, width: 80,
       sortable: false, disableColumnMenu: true,
-      renderHeader: () => <EditableHeader label={headers.check1_label} fieldKey='check1_label' />,
-      renderCell: (p) => (
+      renderHeader: () => <EditableHeader label={headers.check1_label} fieldKey='check1_label' hideFieldKey='hide_check1' />,
+      renderCell: (p: any) => (
         <Box display='flex' justifyContent='center' alignItems='center' width='100%' height='100%'>
           <input
             type='checkbox'
@@ -474,12 +503,12 @@ export default function App() {
           />
         </Box>
       ),
-    },
-    {
+    }] : []),
+    ...(!headers.hide_check2 || isEditMode ? [{
       field: 'check2', headerName: headers.check2_label, width: 80,
       sortable: false, disableColumnMenu: true,
-      renderHeader: () => <EditableHeader label={headers.check2_label} fieldKey='check2_label' />,
-      renderCell: (p) => (
+      renderHeader: () => <EditableHeader label={headers.check2_label} fieldKey='check2_label' hideFieldKey='hide_check2' />,
+      renderCell: (p: any) => (
         <Box display='flex' justifyContent='center' alignItems='center' width='100%' height='100%'>
           <input
             type='checkbox'
@@ -489,12 +518,12 @@ export default function App() {
           />
         </Box>
       ),
-    },
-    {
+    }] : []),
+    ...(!headers.hide_check3 || isEditMode ? [{
       field: 'check3', headerName: headers.check3_label, width: 80,
       sortable: false, disableColumnMenu: true,
-      renderHeader: () => <EditableHeader label={headers.check3_label} fieldKey='check3_label' />,
-      renderCell: (p) => (
+      renderHeader: () => <EditableHeader label={headers.check3_label} fieldKey='check3_label' hideFieldKey='hide_check3' />,
+      renderCell: (p: any) => (
         <Box display='flex' justifyContent='center' alignItems='center' width='100%' height='100%'>
           <input
             type='checkbox'
@@ -504,12 +533,12 @@ export default function App() {
           />
         </Box>
       ),
-    },
-    {
+    }] : []),
+    ...(!headers.hide_updated_at || isEditMode ? [{
       field: 'updated_at', headerName: headers.updated_at_label, width: 150,
       editable: false, sortable: false, disableColumnMenu: true,
-      renderHeader: () => <EditableHeader label={headers.updated_at_label} fieldKey='updated_at_label' />,
-      renderCell: (p) => {
+      renderHeader: () => <EditableHeader label={headers.updated_at_label} fieldKey='updated_at_label' hideFieldKey='hide_updated_at' />,
+      renderCell: (p: any) => {
         if (!p.row.updated_at) return null;
         const date = new Date(p.row.updated_at);
         const isToday = date.toDateString() === new Date().toDateString();
@@ -522,7 +551,7 @@ export default function App() {
           </span>
         );
       },
-    },
+    }] : []),
     ...(isEditMode ? [{
       field: 'actions', headerName: 'Actions', width: 140, sortable: false, disableColumnMenu: true,
       renderCell: (p: any) => {
