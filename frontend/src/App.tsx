@@ -170,7 +170,8 @@ export default function App() {
   const fetchDashboards = useCallback(async () => {
     try {
       const res = await fetch(`${API_BASE_URL}/api/dashboards`);
-      const data = await res.json();
+      const result = await res.json();
+      const data = result.success ? result.data : [];
       setDashboards(data);
       if (data.length > 0 && dashboardId === '') {
         setDashboardId(data[0].id);
@@ -181,8 +182,9 @@ export default function App() {
   const fetchHeaderLabels = useCallback(async () => {
     if (dashboardId === '') return;
     try {
-      const res = await fetch(`${API_BASE_URL}/api/columns/${dashboardId}`);
-      const data = await res.json();
+      const res = await fetch(`${API_BASE_URL}/api/dashboards/${dashboardId}/settings`);
+      const result = await res.json();
+      const data = result.success ? result.data : {};
       setHeaders({
         team_label: data.team_label || 'Team',
         name_label: data.name_label || 'Name',
@@ -214,8 +216,9 @@ export default function App() {
   const fetchUsers = useCallback(async () => {
     if (dashboardId === '') return;
     try {
-      const response = await fetch(`${API_BASE_URL}/api/users/${dashboardId}`);
-      const data: User[] = await response.json();
+      const response = await fetch(`${API_BASE_URL}/api/dashboards/${dashboardId}/users`);
+      const result = await response.json();
+      const data: User[] = result.success ? result.data : [];
       const sortedData = [...data].sort((a, b) => a.order - b.order);
       setUsers(sortedData);
       setSeats(sortedData.map(u => ({ id: u.id, x: u.x || 0, y: u.y || 0, status: u.presence, userId: u.id })));
@@ -242,18 +245,18 @@ export default function App() {
       body: JSON.stringify(payload),
     });
     const result = await response.json();
-    if (result.user) {
+    if (result.success && result.data) {
       setUsers(prev => {
-        const updated = prev.map(u => u.id === id ? result.user : u);
+        const updated = prev.map(u => u.id === id ? result.data : u);
         return updated.sort((a, b) => a.order - b.order);
       });
-      setSeats(prev => prev.map(s => s.id === id ? { ...s, status: result.user.presence || s.status, x: result.user.x ?? s.x, y: result.user.y ?? s.y } : s));
+      setSeats(prev => prev.map(s => s.id === id ? { ...s, status: result.data.presence || s.status, x: result.data.x ?? s.x, y: result.data.y ?? s.y } : s));
     }
   }, [users]);
 
   const saveHeader = async (newHeaders: typeof headers) => {
     if (dashboardId === '') return;
-    await fetch(`${API_BASE_URL}/api/columns/${dashboardId}`, {
+    await fetch(`${API_BASE_URL}/api/dashboards/${dashboardId}/settings`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(newHeaders),
@@ -265,7 +268,7 @@ export default function App() {
     if (dashboardId === '') return;
     const newHeaders = { ...headers, grid_width: width };
     setHeaders(newHeaders);
-    await fetch(`${API_BASE_URL}/api/columns/${dashboardId}`, {
+    await fetch(`${API_BASE_URL}/api/dashboards/${dashboardId}/settings`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(newHeaders),
@@ -314,7 +317,7 @@ export default function App() {
     if (dashboardId === '') return;
     const newHeaders = { ...headers, grid_height: height };
     setHeaders(newHeaders);
-    await fetch(`${API_BASE_URL}/api/columns/${dashboardId}`, {
+    await fetch(`${API_BASE_URL}/api/dashboards/${dashboardId}/settings`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(newHeaders),
@@ -325,7 +328,7 @@ export default function App() {
     if (dashboardId === '') return;
     const newHeaders = { ...headers, notes: newNotes };
     setHeaders(newHeaders);
-    await fetch(`${API_BASE_URL}/api/columns/${dashboardId}`, {
+    await fetch(`${API_BASE_URL}/api/dashboards/${dashboardId}/settings`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(newHeaders),
@@ -360,8 +363,8 @@ export default function App() {
 
   const handleAddMember = async () => {
     const maxOrder = users.length > 0 ? Math.max(...users.map(u => u.order)) : 0;
-    const payload = { ...newUser, presence: 'present', dashboard_id: dashboardId, x: 0, y: 0, order: maxOrder + 1 };
-    await fetch(`${API_BASE_URL}/api/users`, {
+    const payload = { ...newUser, presence: 'present', x: 0, y: 0, order: maxOrder + 1 };
+    await fetch(`${API_BASE_URL}/api/dashboards/${dashboardId}/users`, {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),
     });
@@ -381,13 +384,13 @@ export default function App() {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ dashboard_name: newDbName }),
     });
-    const data = await res.json();
+    const result = await res.json();
     setOpenAddDb(false);
     setNewDbName('');
     await fetchDashboards();
-    if (data.id) {
-      setDashboardId(data.id);
-      localStorage.setItem('selectedDashboardId', data.id.toString());
+    if (result.success && result.data?.id) {
+      setDashboardId(result.data.id);
+      localStorage.setItem('selectedDashboardId', result.data.id.toString());
     }
   };
 
@@ -399,6 +402,22 @@ export default function App() {
     });
     setOpenDbSettings(false);
     fetchDashboards();
+  };
+
+  const handleDeleteDashboard = async () => {
+    if (dashboardId === '') return;
+    if (!window.confirm(`Are you sure you want to delete "${currentDashboardName}"? This will also delete all associated users.`)) return;
+
+    const res = await fetch(`${API_BASE_URL}/api/dashboards/${dashboardId}`, {
+      method: 'DELETE'
+    });
+
+    if (res.ok) {
+      setOpenDbSettings(false);
+      setDashboardId('');
+      localStorage.removeItem('selectedDashboardId');
+      await fetchDashboards();
+    }
   };
 
   const EditableHeader = ({ label, fieldKey, hideFieldKey }: { label: string, fieldKey: keyof typeof headers, hideFieldKey?: keyof typeof headers }) => {
@@ -758,6 +777,14 @@ export default function App() {
             </Box>
           </DialogContent>
           <DialogActions>
+            <Button
+              onClick={handleDeleteDashboard}
+              color='error'
+              startIcon={<DeleteIcon />}
+              sx={{ mr: 'auto' }}
+            >
+              Delete
+            </Button>
             <Button onClick={() => setOpenDbSettings(false)}>Cancel</Button>
             <Button onClick={handleUpdateDashboard} variant='contained' color='primary' disabled={!editDbName}>
               Save Changes

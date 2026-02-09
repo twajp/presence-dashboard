@@ -59,3 +59,51 @@ The application will be accessible via HTTPS on the port specified by `HTTPS_POR
 1. **Add/Remove**: Use the "Add Member" button or the red trash icon in the "Actions" column.
 1. **Reorder**: Use the up/down arrows in the table to change the display order of team members.
 1. **Rename Headers**: In edit mode, click on column headers to rename them.
+
+
+## API Endpoints
+### Response Format
+All API responses follow a consistent format:
+
+**Success Response:**
+```json
+{
+  "success": true,
+  "data": { /* response data */ }
+}
+```
+
+**Error Response:**
+```json
+{
+  "success": false,
+  "error": "Error message"
+}
+```
+
+### Available Endpoints
+#### Health Check
+- `GET /health` - Check server and database connection status
+
+#### Dashboards
+- `GET /api/dashboards` - Get all dashboards
+- `GET /api/dashboards/:dashboardId` - Get specific dashboard
+- `POST /api/dashboards` - Create a new dashboard
+  - Body: `{ "dashboard_name": "string" }`
+- `PUT /api/dashboards/:dashboardId` - Update dashboard name
+  - Body: `{ "dashboard_name": "string" }`
+- `DELETE /api/dashboards/:dashboardId` - Delete dashboard and associated users
+
+#### Dashboard Settings
+- `GET /api/dashboards/:dashboardId/settings` - Get dashboard settings (labels, visibility, grid size, notes)
+- `PUT /api/dashboards/:dashboardId/settings` - Update dashboard settings
+  - Body: Labels, hide flags, grid dimensions, notes
+
+#### Users
+- `GET /api/dashboards/:dashboardId/users` - Get users for a specific dashboard
+- `GET /api/users/:userId` - Get specific user
+- `POST /api/dashboards/:dashboardId/users` - Create a new user
+  - Body: `{ "name": "string", "presence": "present|remote|trip|off", "team": "string", ... }`
+- `PUT /api/users/:userId` - Update user information
+  - Body: Any user fields to update
+- `DELETE /api/users/:userId` - Delete user

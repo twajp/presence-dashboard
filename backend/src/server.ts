@@ -1,5 +1,5 @@
 import express from 'express';
-import { createConnection } from 'mysql2/promise';
+import { createConnection, Connection, ResultSetHeader, RowDataPacket } from 'mysql2/promise';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -12,9 +12,28 @@ app.use((req, res, next) => {
     req.method === 'OPTIONS' ? res.sendStatus(200) : next();
 });
 
-let connection: any;
+let connection: Connection;
 
-// Health check endpoint should be available immediately
+// ============================
+// Helper Functions
+// ============================
+
+const asyncHandler = (fn: Function) => (req: express.Request, res: express.Response, next: express.NextFunction) => {
+    Promise.resolve(fn(req, res, next)).catch(next);
+};
+
+const sendError = (res: express.Response, statusCode: number, message: string) => {
+    res.status(statusCode).json({ success: false, error: message });
+};
+
+const sendSuccess = (res: express.Response, data: any, statusCode: number = 200) => {
+    res.status(statusCode).json({ success: true, data });
+};
+
+// ============================
+// Health Check
+// ============================
+
 app.get('/health', async (req, res) => {
     if (!connection) {
         return res.status(503).send('Database not ready');
@@ -26,6 +45,10 @@ app.get('/health', async (req, res) => {
         res.status(503).send('Database connection failed');
     }
 });
+
+// ============================
+// Database Connection
+// ============================
 
 (async () => {
     try {
@@ -49,29 +72,123 @@ app.get('/health', async (req, res) => {
             }
         }
 
-        app.get('/api/dashboards', async (req, res) => {
-            const [rows] = await connection.execute('SELECT * FROM dashboard_settings');
-            res.json(rows);
-        });
+        // ============================
+        // Dashboard Endpoints
+        // ============================
 
-        app.post('/api/dashboards', async (req, res) => {
-            const { dashboard_name } = req.body;
-            const [result] = await connection.execute('INSERT INTO dashboard_settings (dashboard_name) VALUES (?)', [dashboard_name]);
-            res.json({ success: true, id: (result as any).insertId });
-        });
+        // Get all dashboards
+        app.get('/api/dashboards', asyncHandler(async (req: express.Request, res: express.Response) => {
+            const [rows] = await connection.execute<RowDataPacket[]>('SELECT * FROM dashboard_settings ORDER BY id');
+            sendSuccess(res, rows);
+        }));
 
-        app.put('/api/dashboards/:id', async (req, res) => {
-            const { dashboard_name } = req.body;
-            await connection.execute(
-                'UPDATE dashboard_settings SET dashboard_name = ? WHERE id = ?',
-                [dashboard_name, req.params.id]
+        // Get specific dashboard
+        app.get('/api/dashboards/:dashboardId', asyncHandler(async (req: express.Request, res: express.Response) => {
+            const { dashboardId } = req.params;
+
+            if (!dashboardId || isNaN(Number(dashboardId))) {
+                return sendError(res, 400, 'Invalid dashboard ID');
+            }
+
+            const [rows] = await connection.execute<RowDataPacket[]>(
+                'SELECT * FROM dashboard_settings WHERE id = ?',
+                [dashboardId]
             );
-            res.json({ success: true });
-        });
 
-        app.get('/api/columns/:dashboardId', async (req, res) => {
-            const [rows]: any = await connection.execute('SELECT * FROM dashboard_settings WHERE id = ?', [req.params.dashboardId]);
-            res.json(rows[0] || {
+            if (rows.length === 0) {
+                return sendError(res, 404, 'Dashboard not found');
+            }
+
+            sendSuccess(res, rows[0]);
+        }));
+
+        // Create dashboard
+        app.post('/api/dashboards', asyncHandler(async (req: express.Request, res: express.Response) => {
+            const { dashboard_name } = req.body;
+
+            if (!dashboard_name || typeof dashboard_name !== 'string' || dashboard_name.trim().length === 0) {
+                return sendError(res, 400, 'Dashboard name is required');
+            }
+
+            const [result] = await connection.execute<ResultSetHeader>(
+                'INSERT INTO dashboard_settings (dashboard_name) VALUES (?)',
+                [dashboard_name.trim()]
+            );
+
+            sendSuccess(res, { id: result.insertId, dashboard_name: dashboard_name.trim() }, 201);
+        }));
+
+        // Update dashboard name
+        app.put('/api/dashboards/:dashboardId', asyncHandler(async (req: express.Request, res: express.Response) => {
+            const { dashboardId } = req.params;
+            const { dashboard_name } = req.body;
+
+            if (!dashboardId || isNaN(Number(dashboardId))) {
+                return sendError(res, 400, 'Invalid dashboard ID');
+            }
+
+            if (!dashboard_name || typeof dashboard_name !== 'string' || dashboard_name.trim().length === 0) {
+                return sendError(res, 400, 'Dashboard name is required');
+            }
+
+            const [result] = await connection.execute<ResultSetHeader>(
+                'UPDATE dashboard_settings SET dashboard_name = ? WHERE id = ?',
+                [dashboard_name.trim(), dashboardId]
+            );
+
+            if (result.affectedRows === 0) {
+                return sendError(res, 404, 'Dashboard not found');
+            }
+
+            sendSuccess(res, { id: Number(dashboardId), dashboard_name: dashboard_name.trim() });
+        }));
+
+        // Delete dashboard
+        app.delete('/api/dashboards/:dashboardId', asyncHandler(async (req: express.Request, res: express.Response) => {
+            const { dashboardId } = req.params;
+
+            if (!dashboardId || isNaN(Number(dashboardId))) {
+                return sendError(res, 400, 'Invalid dashboard ID');
+            }
+
+            // Delete associated users first
+            await connection.execute('DELETE FROM users WHERE dashboard_id = ?', [dashboardId]);
+
+            // Delete dashboard
+            const [result] = await connection.execute<ResultSetHeader>(
+                'DELETE FROM dashboard_settings WHERE id = ?',
+                [dashboardId]
+            );
+
+            if (result.affectedRows === 0) {
+                return sendError(res, 404, 'Dashboard not found');
+            }
+
+            sendSuccess(res, { id: Number(dashboardId) });
+        }));
+
+        // ============================
+        // Dashboard Settings Endpoints
+        // ============================
+
+        // Get dashboard settings
+        app.get('/api/dashboards/:dashboardId/settings', asyncHandler(async (req: express.Request, res: express.Response) => {
+            const { dashboardId } = req.params;
+
+            if (!dashboardId || isNaN(Number(dashboardId))) {
+                return sendError(res, 400, 'Invalid dashboard ID');
+            }
+
+            const [rows] = await connection.execute<RowDataPacket[]>(
+                'SELECT * FROM dashboard_settings WHERE id = ?',
+                [dashboardId]
+            );
+
+            if (rows.length === 0) {
+                return sendError(res, 404, 'Dashboard not found');
+            }
+
+            const settings = rows[0] || {
                 team_label: 'Team',
                 name_label: 'Name',
                 presence_label: 'Status',
@@ -92,13 +209,39 @@ app.get('/health', async (req, res) => {
                 grid_width: 40,
                 grid_height: 70,
                 notes: ''
-            });
-        });
+            };
 
-        app.put('/api/columns/:dashboardId', async (req, res) => {
-            const { team_label, name_label, presence_label, note1_label, note2_label, note3_label, check1_label, check2_label, check3_label, updated_at_label, hide_note1, hide_note2, hide_note3, hide_check1, hide_check2, hide_check3, hide_updated_at, grid_width, grid_height, notes } = req.body;
+            sendSuccess(res, settings);
+        }));
+
+        // Update dashboard settings
+        app.put('/api/dashboards/:dashboardId/settings', asyncHandler(async (req: express.Request, res: express.Response) => {
+            const { dashboardId } = req.params;
+            const {
+                team_label, name_label, presence_label,
+                note1_label, note2_label, note3_label,
+                check1_label, check2_label, check3_label,
+                updated_at_label,
+                hide_note1, hide_note2, hide_note3,
+                hide_check1, hide_check2, hide_check3,
+                hide_updated_at,
+                grid_width, grid_height, notes
+            } = req.body;
+
+            if (!dashboardId || isNaN(Number(dashboardId))) {
+                return sendError(res, 400, 'Invalid dashboard ID');
+            }
+
+            // Validate grid dimensions
+            if (grid_width !== undefined && (isNaN(Number(grid_width)) || Number(grid_width) <= 0)) {
+                return sendError(res, 400, 'Invalid grid_width');
+            }
+            if (grid_height !== undefined && (isNaN(Number(grid_height)) || Number(grid_height) <= 0)) {
+                return sendError(res, 400, 'Invalid grid_height');
+            }
+
             const values = [
-                req.params.dashboardId,
+                dashboardId,
                 team_label ?? null,
                 name_label ?? null,
                 presence_label ?? null,
@@ -120,54 +263,189 @@ app.get('/health', async (req, res) => {
                 grid_height ?? null,
                 notes ?? null
             ];
+
             await connection.execute(
-                'INSERT INTO dashboard_settings (id, team_label, name_label, presence_label, note1_label, note2_label, note3_label, check1_label, check2_label, check3_label, updated_at_label, hide_note1, hide_note2, hide_note3, hide_check1, hide_check2, hide_check3, hide_updated_at, grid_width, grid_height, notes) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE team_label=?, name_label=?, presence_label=?, note1_label=?, note2_label=?, note3_label=?, check1_label=?, check2_label=?, check3_label=?, updated_at_label=?, hide_note1=?, hide_note2=?, hide_note3=?, hide_check1=?, hide_check2=?, hide_check3=?, hide_updated_at=?, grid_width=?, grid_height=?, notes=?',
+                `INSERT INTO dashboard_settings 
+                (id, team_label, name_label, presence_label, note1_label, note2_label, note3_label, 
+                check1_label, check2_label, check3_label, updated_at_label, 
+                hide_note1, hide_note2, hide_note3, hide_check1, hide_check2, hide_check3, hide_updated_at, 
+                grid_width, grid_height, notes) 
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) 
+                ON DUPLICATE KEY UPDATE 
+                team_label=?, name_label=?, presence_label=?, 
+                note1_label=?, note2_label=?, note3_label=?, 
+                check1_label=?, check2_label=?, check3_label=?, 
+                updated_at_label=?, 
+                hide_note1=?, hide_note2=?, hide_note3=?, 
+                hide_check1=?, hide_check2=?, hide_check3=?, hide_updated_at=?, 
+                grid_width=?, grid_height=?, notes=?`,
                 [...values, ...values.slice(1)]
             );
-            res.json({ success: true });
-        });
 
-        app.get('/api/users/:dashboardId', async (req, res) => {
-            const [rows] = await connection.execute('SELECT * FROM users WHERE dashboard_id = ? ORDER BY `order` ASC', [req.params.dashboardId]);
-            res.json(rows);
-        });
+            sendSuccess(res, { id: Number(dashboardId) });
+        }));
 
-        app.put('/api/users/:id', async (req, res) => {
+        // ============================
+        // User Endpoints
+        // ============================
+
+        // Get users by dashboard
+        app.get('/api/dashboards/:dashboardId/users', asyncHandler(async (req: express.Request, res: express.Response) => {
+            const { dashboardId } = req.params;
+
+            if (!dashboardId || isNaN(Number(dashboardId))) {
+                return sendError(res, 400, 'Invalid dashboard ID');
+            }
+
+            const [rows] = await connection.execute<RowDataPacket[]>(
+                'SELECT * FROM users WHERE dashboard_id = ? ORDER BY `order` ASC',
+                [dashboardId]
+            );
+
+            sendSuccess(res, rows);
+        }));
+
+        // Get specific user
+        app.get('/api/users/:userId', asyncHandler(async (req: express.Request, res: express.Response) => {
+            const { userId } = req.params;
+
+            if (!userId || isNaN(Number(userId))) {
+                return sendError(res, 400, 'Invalid user ID');
+            }
+
+            const [rows] = await connection.execute<RowDataPacket[]>(
+                'SELECT * FROM users WHERE id = ?',
+                [userId]
+            );
+
+            if (rows.length === 0) {
+                return sendError(res, 404, 'User not found');
+            }
+
+            sendSuccess(res, rows[0]);
+        }));
+
+        // Create user
+        app.post('/api/dashboards/:dashboardId/users', asyncHandler(async (req: express.Request, res: express.Response) => {
+            const { dashboardId } = req.params;
             const { team, name, presence, note1, note2, note3, check1, check2, check3, x, y, order } = req.body;
-            await connection.execute(
-                'UPDATE users SET team=?, name=?, presence=?, note1=?, note2=?, note3=?, check1=?, check2=?, check3=?, x=?, y=?, `order`=? WHERE id=?',
-                [team, name, presence, note1, note2, note3, check1, check2, check3, x, y, order, req.params.id]
+
+            if (!dashboardId || isNaN(Number(dashboardId))) {
+                return sendError(res, 400, 'Invalid dashboard ID');
+            }
+
+            if (!name || typeof name !== 'string' || name.trim().length === 0) {
+                return sendError(res, 400, 'Name is required');
+            }
+
+            if (!presence || !['present', 'remote', 'trip', 'off'].includes(presence)) {
+                return sendError(res, 400, 'Valid presence status is required');
+            }
+
+            if (x !== undefined && isNaN(Number(x))) {
+                return sendError(res, 400, 'Invalid x coordinate');
+            }
+
+            if (y !== undefined && isNaN(Number(y))) {
+                return sendError(res, 400, 'Invalid y coordinate');
+            }
+
+            const [result] = await connection.execute<ResultSetHeader>(
+                `INSERT INTO users 
+                (team, name, presence, dashboard_id, note1, note2, note3, check1, check2, check3, x, y, \`order\`) 
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+                [team, name.trim(), presence, dashboardId, note1, note2, note3, check1, check2, check3, x ?? 0, y ?? 0, order ?? 0]
             );
-            const [rows]: any = await connection.execute('SELECT * FROM users WHERE id = ?', [req.params.id]);
-            res.json({ success: true, user: rows[0] });
+
+            sendSuccess(res, { id: result.insertId }, 201);
+        }));
+
+        // Update user
+        app.put('/api/users/:userId', asyncHandler(async (req: express.Request, res: express.Response) => {
+            const { userId } = req.params;
+            const { team, name, presence, note1, note2, note3, check1, check2, check3, x, y, order } = req.body;
+
+            if (!userId || isNaN(Number(userId))) {
+                return sendError(res, 400, 'Invalid user ID');
+            }
+
+            if (name !== undefined && (typeof name !== 'string' || name.trim().length === 0)) {
+                return sendError(res, 400, 'Name cannot be empty');
+            }
+
+            if (presence !== undefined && !['present', 'remote', 'trip', 'off'].includes(presence)) {
+                return sendError(res, 400, 'Invalid presence status');
+            }
+
+            const [result] = await connection.execute<ResultSetHeader>(
+                `UPDATE users SET 
+                team=?, name=?, presence=?, note1=?, note2=?, note3=?, 
+                check1=?, check2=?, check3=?, x=?, y=?, \`order\`=? 
+                WHERE id=?`,
+                [team, name?.trim(), presence, note1, note2, note3, check1, check2, check3, x, y, order, userId]
+            );
+
+            if (result.affectedRows === 0) {
+                return sendError(res, 404, 'User not found');
+            }
+
+            const [rows] = await connection.execute<RowDataPacket[]>('SELECT * FROM users WHERE id = ?', [userId]);
+            sendSuccess(res, rows[0]);
+        }));
+
+        // Delete user
+        app.delete('/api/users/:userId', asyncHandler(async (req: express.Request, res: express.Response) => {
+            const { userId } = req.params;
+
+            if (!userId || isNaN(Number(userId))) {
+                return sendError(res, 400, 'Invalid user ID');
+            }
+
+            const [result] = await connection.execute<ResultSetHeader>(
+                'DELETE FROM users WHERE id = ?',
+                [userId]
+            );
+
+            if (result.affectedRows === 0) {
+                return sendError(res, 404, 'User not found');
+            }
+
+            sendSuccess(res, { id: Number(userId) });
+        }));
+
+        // ============================
+        // Error Handler
+        // ============================
+
+        app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
+            console.error('Error:', err);
+            sendError(res, err.statusCode || 500, err.message || 'Internal server error');
         });
 
-        app.post('/api/users', async (req, res) => {
-            const { team, name, presence, dashboard_id, note1, note2, note3, check1, check2, check3, x, y, order } = req.body;
-            const [result] = await connection.execute(
-                'INSERT INTO users (team, name, presence, dashboard_id, note1, note2, note3, check1, check2, check3, x, y, `order`) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
-                [team, name, presence, dashboard_id, note1, note2, note3, check1, check2, check3, x, y, order]
-            );
-            res.json({ success: true, id: (result as any).insertId });
-        });
-
-        app.delete('/api/users/:id', async (req, res) => {
-            await connection.execute('DELETE FROM users WHERE id = ?', [req.params.id]);
-            res.json({ success: true });
-        });
+        // ============================
+        // Start Server
+        // ============================
 
         app.listen(PORT, () => {
             console.log(`✅ Server running on http://localhost:${PORT}`);
-            console.log(`📊 GET /api/dashboards - Get dashboard list`);
-            console.log(`➕ POST /api/dashboards - Create dashboard`);
-            console.log(`✏️  PUT /api/dashboards/:id - Update dashboard`);
-            console.log(`📋 GET /api/columns/:dashboardId - Get dashboard columns`);
-            console.log(`✏️  PUT /api/columns/:dashboardId - Update dashboard columns`);
-            console.log(`👥 GET /api/users - Get user list`);
-            console.log(`👤 GET /api/users/:dashboardId - Get users by dashboard`);
-            console.log(`✏️  PUT /api/users/:id - Update user`);
-            console.log(`➕ POST /api/users - Create user`);
-            console.log(`🗑️  DELETE /api/users/:id - Delete user`);
+            console.log('\n📚 API Endpoints:');
+            console.log('\n  Health:');
+            console.log('    GET    /health');
+            console.log('\n  Dashboards:');
+            console.log('    GET    /api/dashboards');
+            console.log('    GET    /api/dashboards/:dashboardId');
+            console.log('    POST   /api/dashboards');
+            console.log('    PUT    /api/dashboards/:dashboardId');
+            console.log('    DELETE /api/dashboards/:dashboardId');
+            console.log('\n  Dashboard Settings:');
+            console.log('    GET    /api/dashboards/:dashboardId/settings');
+            console.log('    PUT    /api/dashboards/:dashboardId/settings');
+            console.log('\n  Users:');
+            console.log('    GET    /api/dashboards/:dashboardId/users');
+            console.log('    GET    /api/users/:userId');
+            console.log('    POST   /api/dashboards/:dashboardId/users');
+            console.log('    PUT    /api/users/:userId');
+            console.log('    DELETE /api/users/:userId');
         });
     } catch (error) {
         console.error('❌ Failed to start server:', error);
