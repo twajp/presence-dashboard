@@ -58,6 +58,7 @@ function PresenceDialog({ open, onClose, currentStatus, onSelect }: {
               sx={{
                 py: 1.5,
                 borderColor: STATUS_CONFIG[status].color,
+                fontSize: '1.5rem',
                 color: currentStatus === status ? '#fff' : STATUS_CONFIG[status].color,
                 backgroundColor: currentStatus === status ? STATUS_CONFIG[status].color : 'transparent',
                 '&:hover': { backgroundColor: STATUS_CONFIG[status].color, color: '#fff' }
@@ -628,6 +629,7 @@ export default function App() {
                   variant='outlined'
                   size="small"
                   onClick={() => setOpenAdd(true)}
+                  sx={{ fontSize: '1rem' }}
                 >
                   Add Member
                 </Button>
@@ -637,7 +639,7 @@ export default function App() {
                   color='primary'
                   size="small"
                   onClick={() => { setIsEditMode(false); setEditingHeader(null); }}
-                  sx={{ minWidth: '80px' }}
+                  sx={{ minWidth: '90px', fontSize: '1rem' }}
                 >
                   Done
                 </Button>
@@ -648,7 +650,7 @@ export default function App() {
                 variant='outlined'
                 size="small"
                 onClick={() => setIsEditMode(true)}
-                sx={{ minWidth: '80px' }}
+                sx={{ minWidth: '90px', fontSize: '1rem' }}
               >
                 Edit
               </Button>
