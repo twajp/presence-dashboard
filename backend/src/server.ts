@@ -75,10 +75,24 @@ app.get('/health', async (req, res) => {
         });
 
         app.put('/api/columns/:dashboardId', async (req, res) => {
-            const { team_label, name_label, note1_label, note2_label, grid_width, grid_height, notes } = req.body;
+            const { team_label, name_label, note1_label, note2_label, note3_label, check1_label, check2_label, check3_label, grid_width, grid_height, notes } = req.body;
+            const values = [
+                req.params.dashboardId,
+                team_label ?? null,
+                name_label ?? null,
+                note1_label ?? null,
+                note2_label ?? null,
+                note3_label ?? null,
+                check1_label ?? null,
+                check2_label ?? null,
+                check3_label ?? null,
+                grid_width ?? null,
+                grid_height ?? null,
+                notes ?? null
+            ];
             await connection.execute(
-                'INSERT INTO dashboard_settings (id, team_label, name_label, note1_label, note2_label, grid_width, grid_height, notes) VALUES (?, ?, ?, ?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE team_label=?, name_label=?, note1_label=?, note2_label=?, grid_width=?, grid_height=?, notes=?',
-                [req.params.dashboardId, team_label, name_label, note1_label, note2_label, grid_width, grid_height, notes, team_label, name_label, note1_label, note2_label, grid_width, grid_height, notes]
+                'INSERT INTO dashboard_settings (id, team_label, name_label, note1_label, note2_label, note3_label, check1_label, check2_label, check3_label, grid_width, grid_height, notes) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE team_label=?, name_label=?, note1_label=?, note2_label=?, note3_label=?, check1_label=?, check2_label=?, check3_label=?, grid_width=?, grid_height=?, notes=?',
+                [...values, ...values.slice(1)]
             );
             res.json({ success: true });
         });
@@ -89,19 +103,19 @@ app.get('/health', async (req, res) => {
         });
 
         app.put('/api/users/:id', async (req, res) => {
-            const { team, name, presence, note1, note2, x, y, order } = req.body;
+            const { team, name, presence, note1, note2, note3, check1, check2, check3, x, y, order } = req.body;
             await connection.execute(
-                'UPDATE users SET team=?, name=?, presence=?, note1=?, note2=?, x=?, y=?, `order`=? WHERE id=?',
-                [team, name, presence, note1, note2, x, y, order, req.params.id]
+                'UPDATE users SET team=?, name=?, presence=?, note1=?, note2=?, note3=?, check1=?, check2=?, check3=?, x=?, y=?, `order`=? WHERE id=?',
+                [team, name, presence, note1, note2, note3, check1, check2, check3, x, y, order, req.params.id]
             );
             res.json({ success: true });
         });
 
         app.post('/api/users', async (req, res) => {
-            const { team, name, presence, dashboard_id, x, y, order } = req.body;
+            const { team, name, presence, dashboard_id, note1, note2, note3, check1, check2, check3, x, y, order } = req.body;
             const [result] = await connection.execute(
-                'INSERT INTO users (team, name, presence, dashboard_id, x, y, `order`) VALUES (?, ?, ?, ?, ?, ?, ?)',
-                [team, name, presence, dashboard_id, x, y, order]
+                'INSERT INTO users (team, name, presence, dashboard_id, note1, note2, note3, check1, check2, check3, x, y, `order`) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+                [team, name, presence, dashboard_id, note1, note2, note3, check1, check2, check3, x, y, order]
             );
             res.json({ success: true, id: (result as any).insertId });
         });

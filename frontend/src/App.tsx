@@ -21,7 +21,9 @@ type PresenceStatus = 'present' | 'remote' | 'trip' | 'off';
 type Dashboard = { id: number; dashboard_name: string; };
 type User = {
   id: number; name: string; presence: PresenceStatus;
-  note1?: string; note2?: string; x: number; y: number;
+  note1?: string; note2?: string; note3?: string;
+  check1?: boolean; check2?: boolean; check3?: boolean;
+  x: number; y: number;
   team?: string; dashboard_id?: number; order: number;
 };
 type Seat = { id: number; x: number; y: number; status: PresenceStatus; userId?: number; };
@@ -130,6 +132,10 @@ export default function App() {
     name_label: 'Name',
     note1_label: 'Note 1',
     note2_label: 'Note 2',
+    note3_label: 'Note 3',
+    check1_label: 'Check 1',
+    check2_label: 'Check 2',
+    check3_label: 'Check 3',
     grid_width: 40,
     grid_height: 70,
     notes: ''
@@ -171,6 +177,10 @@ export default function App() {
         name_label: data.name_label || 'Name',
         note1_label: data.note1_label || 'Note 1',
         note2_label: data.note2_label || 'Note 2',
+        note3_label: data.note3_label || 'Note 3',
+        check1_label: data.check1_label || 'Check 1',
+        check2_label: data.check2_label || 'Check 2',
+        check3_label: data.check3_label || 'Check 3',
         grid_width: data.grid_width ?? 40,
         grid_height: data.grid_height ?? 70,
         notes: data.notes || ''
@@ -439,6 +449,56 @@ export default function App() {
       editable: true, sortable: false, disableColumnMenu: true,
       renderHeader: () => <EditableHeader label={headers.note2_label} fieldKey='note2_label' />
     },
+    {
+      field: 'note3', headerName: headers.note3_label, flex: 1,
+      editable: true, sortable: false, disableColumnMenu: true,
+      renderHeader: () => <EditableHeader label={headers.note3_label} fieldKey='note3_label' />
+    },
+    {
+      field: 'check1', headerName: headers.check1_label, width: 80,
+      sortable: false, disableColumnMenu: true,
+      renderHeader: () => <EditableHeader label={headers.check1_label} fieldKey='check1_label' />,
+      renderCell: (p) => (
+        <Box display='flex' justifyContent='center' alignItems='center' width='100%' height='100%'>
+          <input
+            type='checkbox'
+            checked={p.row.check1 || false}
+            onChange={(e) => updateSeat(p.row.id, { check1: e.target.checked })}
+            style={{ width: 18, height: 18, cursor: 'pointer' }}
+          />
+        </Box>
+      ),
+    },
+    {
+      field: 'check2', headerName: headers.check2_label, width: 80,
+      sortable: false, disableColumnMenu: true,
+      renderHeader: () => <EditableHeader label={headers.check2_label} fieldKey='check2_label' />,
+      renderCell: (p) => (
+        <Box display='flex' justifyContent='center' alignItems='center' width='100%' height='100%'>
+          <input
+            type='checkbox'
+            checked={p.row.check2 || false}
+            onChange={(e) => updateSeat(p.row.id, { check2: e.target.checked })}
+            style={{ width: 18, height: 18, cursor: 'pointer' }}
+          />
+        </Box>
+      ),
+    },
+    {
+      field: 'check3', headerName: headers.check3_label, width: 80,
+      sortable: false, disableColumnMenu: true,
+      renderHeader: () => <EditableHeader label={headers.check3_label} fieldKey='check3_label' />,
+      renderCell: (p) => (
+        <Box display='flex' justifyContent='center' alignItems='center' width='100%' height='100%'>
+          <input
+            type='checkbox'
+            checked={p.row.check3 || false}
+            onChange={(e) => updateSeat(p.row.id, { check3: e.target.checked })}
+            style={{ width: 18, height: 18, cursor: 'pointer' }}
+          />
+        </Box>
+      ),
+    },
     ...(isEditMode ? [{
       field: 'actions', headerName: 'Actions', width: 140, sortable: false, disableColumnMenu: true,
       renderCell: (p: any) => {
@@ -587,7 +647,7 @@ export default function App() {
                 columnHeaderHeight={28}
                 rowHeight={28}
                 processRowUpdate={async (n) => {
-                  await updateSeat(n.id, { team: n.team, name: n.name, note1: n.note1, note2: n.note2 });
+                  await updateSeat(n.id, { team: n.team, name: n.name, note1: n.note1, note2: n.note2 , note3: n.note3});
                   return n;
                 }}
                 hideFooter
