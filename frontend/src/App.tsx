@@ -724,7 +724,16 @@ export default function App() {
             <TextField label='Team' fullWidth value={newUser.team} onChange={e => setNewUser({ ...newUser, team: e.target.value })} />
             <TextField label='Name' fullWidth value={newUser.name} onChange={e => setNewUser({ ...newUser, name: e.target.value })} />
           </Box></DialogContent>
-          <DialogActions><Button onClick={() => setOpenAdd(false)}>Cancel</Button><Button onClick={handleAddMember} variant='contained'>Add</Button></DialogActions>
+          <DialogActions>
+            <Button onClick={() => setOpenAdd(false)}>Cancel</Button>
+            <Button
+              onClick={handleAddMember}
+              variant='contained'
+              disabled={!newUser.team || !newUser.name}
+            >
+              Add
+            </Button>
+          </DialogActions>
         </Dialog>
 
         {/* Dashboard Dialog */}
