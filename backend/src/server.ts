@@ -74,6 +74,7 @@ app.get('/health', async (req, res) => {
             res.json(rows[0] || {
                 team_label: 'Team',
                 name_label: 'Name',
+                presence_label: 'Status',
                 note1_label: 'Note 1',
                 note2_label: 'Note 2',
                 note3_label: 'Note 3',
@@ -95,11 +96,12 @@ app.get('/health', async (req, res) => {
         });
 
         app.put('/api/columns/:dashboardId', async (req, res) => {
-            const { team_label, name_label, note1_label, note2_label, note3_label, check1_label, check2_label, check3_label, updated_at_label, hide_note1, hide_note2, hide_note3, hide_check1, hide_check2, hide_check3, hide_updated_at, grid_width, grid_height, notes } = req.body;
+            const { team_label, name_label, presence_label, note1_label, note2_label, note3_label, check1_label, check2_label, check3_label, updated_at_label, hide_note1, hide_note2, hide_note3, hide_check1, hide_check2, hide_check3, hide_updated_at, grid_width, grid_height, notes } = req.body;
             const values = [
                 req.params.dashboardId,
                 team_label ?? null,
                 name_label ?? null,
+                presence_label ?? null,
                 note1_label ?? null,
                 note2_label ?? null,
                 note3_label ?? null,
@@ -119,7 +121,7 @@ app.get('/health', async (req, res) => {
                 notes ?? null
             ];
             await connection.execute(
-                'INSERT INTO dashboard_settings (id, team_label, name_label, note1_label, note2_label, note3_label, check1_label, check2_label, check3_label, updated_at_label, hide_note1, hide_note2, hide_note3, hide_check1, hide_check2, hide_check3, hide_updated_at, grid_width, grid_height, notes) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE team_label=?, name_label=?, note1_label=?, note2_label=?, note3_label=?, check1_label=?, check2_label=?, check3_label=?, updated_at_label=?, hide_note1=?, hide_note2=?, hide_note3=?, hide_check1=?, hide_check2=?, hide_check3=?, hide_updated_at=?, grid_width=?, grid_height=?, notes=?',
+                'INSERT INTO dashboard_settings (id, team_label, name_label, presence_label, note1_label, note2_label, note3_label, check1_label, check2_label, check3_label, updated_at_label, hide_note1, hide_note2, hide_note3, hide_check1, hide_check2, hide_check3, hide_updated_at, grid_width, grid_height, notes) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE team_label=?, name_label=?, presence_label=?, note1_label=?, note2_label=?, note3_label=?, check1_label=?, check2_label=?, check3_label=?, updated_at_label=?, hide_note1=?, hide_note2=?, hide_note3=?, hide_check1=?, hide_check2=?, hide_check3=?, hide_updated_at=?, grid_width=?, grid_height=?, notes=?',
                 [...values, ...values.slice(1)]
             );
             res.json({ success: true });

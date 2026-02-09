@@ -3,6 +3,7 @@ CREATE TABLE IF NOT EXISTS dashboard_settings (
     dashboard_name VARCHAR(50) CHARACTER SET utf8,
     team_label VARCHAR(50) CHARACTER SET utf8 DEFAULT 'Team',
     name_label VARCHAR(50) CHARACTER SET utf8 DEFAULT 'Name',
+    presence_label VARCHAR(50) CHARACTER SET utf8 DEFAULT 'Status',
     note1_label VARCHAR(50) CHARACTER SET utf8 DEFAULT 'Note 1',
     note2_label VARCHAR(50) CHARACTER SET utf8 DEFAULT 'Note 2',
     note3_label VARCHAR(50) CHARACTER SET utf8 DEFAULT 'Note 3',
@@ -41,8 +42,8 @@ CREATE TABLE IF NOT EXISTS users (
 );
 
 
-INSERT INTO dashboard_settings (dashboard_name, team_label, name_label, note1_label, note2_label, note3_label, check1_label, check2_label, check3_label, updated_at_label, grid_width, grid_height, notes) VALUES
-('テスト在籍表', 'Team', 'Name', 'Note 1', 'Note 2', 'Note 3', 'Check 1', 'Check 2', 'Check 3', 'Last Updated', 40, 70, NULL);
+INSERT INTO dashboard_settings (dashboard_name, team_label, name_label, presence_label, note1_label, note2_label, note3_label, check1_label, check2_label, check3_label, updated_at_label, grid_width, grid_height, notes) VALUES
+('テスト在籍表', 'Team', 'Name', 'Status', 'Note 1', 'Note 2', 'Note 3', 'Check 1', 'Check 2', 'Check 3', 'Last Updated', 40, 70, NULL);
 
 INSERT INTO users (team, name, presence, note1, note2, note3, check1, check2, check3, `order`, dashboard_id, x, y) VALUES
 ('織田軍', '織田 信長', 'present', NULL, NULL, NULL, TRUE, TRUE, FALSE, 1, 1, 20, 50),
