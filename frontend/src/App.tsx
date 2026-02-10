@@ -570,7 +570,7 @@ export default function App() {
       },
     }] : []),
     ...(isEditMode ? [{
-      field: 'actions', headerName: 'Actions', width: 140, sortable: false, disableColumnMenu: true,
+      field: 'actions', headerName: 'Actions', width: 105, sortable: false, disableColumnMenu: true,
       renderCell: (p: any) => {
         const index = users.findIndex(u => u.id === p.row.id);
         return (
