@@ -138,9 +138,9 @@ export default function App() {
   const [openDbSettings, setOpenDbSettings] = useState(false);
   const [presenceTarget, setPresenceTarget] = useState<User | null>(null);
   const [isResizingWidth, setIsResizingWidth] = useState(false);
-  const [gridWidth, setGridWidth] = useState(460);
+  const [gridWidth, setGridWidth] = useState(DEFAULT_DASHBOARD_SETTINGS.grid_width);
   const [isResizingHeight, setIsResizingHeight] = useState(false);
-  const [gridHeight, setGridHeight] = useState(460);
+  const [gridHeight, setGridHeight] = useState(DEFAULT_DASHBOARD_SETTINGS.grid_height);
   const [notes, setNotes] = useState('');
 
   const [newUser, setNewUser] = useState({ name: '', team: '' });
