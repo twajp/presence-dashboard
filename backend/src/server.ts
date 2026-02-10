@@ -1,6 +1,7 @@
 import express from 'express';
 import { createConnection, Connection, ResultSetHeader, RowDataPacket } from 'mysql2/promise';
 import { DEFAULT_DASHBOARD_SETTINGS } from './config/defaults.js';
+import { PRESENCE_STATUSES, type PresenceStatus } from './config/presence.js';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -318,7 +319,7 @@ app.get('/health', async (req, res) => {
                 return sendError(res, 400, 'Name is required');
             }
 
-            if (!presence || !['present', 'remote', 'trip', 'off'].includes(presence)) {
+            if (!presence || !PRESENCE_STATUSES.includes(presence as PresenceStatus)) {
                 return sendError(res, 400, 'Valid presence status is required');
             }
 
@@ -353,7 +354,7 @@ app.get('/health', async (req, res) => {
                 return sendError(res, 400, 'Name cannot be empty');
             }
 
-            if (presence !== undefined && !['present', 'remote', 'trip', 'off'].includes(presence)) {
+            if (presence !== undefined && !PRESENCE_STATUSES.includes(presence as PresenceStatus)) {
                 return sendError(res, 400, 'Invalid presence status');
             }
 

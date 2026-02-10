@@ -18,8 +18,8 @@ import {
   Check as CheckIcon
 } from '@mui/icons-material';
 import { DEFAULT_DASHBOARD_SETTINGS } from './config/defaults';
+import { type PresenceStatus, PRESENCE_STATUSES, PRESENCE_STATUS_CONFIG } from './config/presence';
 
-type PresenceStatus = 'present' | 'remote' | 'trip' | 'off';
 type Dashboard = { id: number; dashboard_name: string; };
 type User = {
   id: number; name: string; presence: PresenceStatus;
@@ -33,14 +33,8 @@ type Seat = { id: number; x: number; y: number; status: PresenceStatus; userId?:
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || (import.meta.env.MODE === 'production' ? '' : 'http://localhost:3000');
 
-const STATUS_CONFIG: Record<PresenceStatus, { color: string; label: string }> = {
-  present: { color: '#4caf50', label: 'Present' },
-  remote: { color: '#2196f3', label: 'Remote' },
-  trip: { color: '#ffc107', label: 'Trip' },
-  off: { color: '#9e9e9e', label: 'Off' },
-};
-
-const STATUS_ORDER: PresenceStatus[] = ['present', 'remote', 'trip', 'off'];
+const STATUS_CONFIG = PRESENCE_STATUS_CONFIG;
+const STATUS_ORDER = PRESENCE_STATUSES;
 
 // --- Sub-Components ---
 
