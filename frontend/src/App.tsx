@@ -16,6 +16,7 @@ import DashboardCustomizeIcon from '@mui/icons-material/DashboardCustomize';
 import SettingsIcon from '@mui/icons-material/Settings';
 import EditIcon from '@mui/icons-material/Edit';
 import CheckIcon from '@mui/icons-material/Check';
+import { DEFAULT_DASHBOARD_SETTINGS } from './config/defaults';
 
 type PresenceStatus = 'present' | 'remote' | 'trip' | 'off';
 type Dashboard = { id: number; dashboard_name: string; };
@@ -129,28 +130,7 @@ export default function App() {
   const [loading, setLoading] = useState(true);
   const [isEditMode, setIsEditMode] = useState(false);
 
-  const [headers, setHeaders] = useState({
-    team_label: 'Team',
-    name_label: 'Name',
-    presence_label: 'Status',
-    note1_label: 'Note 1',
-    note2_label: 'Note 2',
-    note3_label: 'Note 3',
-    check1_label: 'Check 1',
-    check2_label: 'Check 2',
-    check3_label: 'Check 3',
-    updated_at_label: 'Last Updated',
-    hide_note1: false,
-    hide_note2: false,
-    hide_note3: false,
-    hide_check1: false,
-    hide_check2: false,
-    hide_check3: false,
-    hide_updated_at: false,
-    grid_width: 460,
-    grid_height: 460,
-    notes: ''
-  });
+  const [headers, setHeaders] = useState(DEFAULT_DASHBOARD_SETTINGS);
   const [editingHeader, setEditingHeader] = useState<string | null>(null);
 
   const [openAdd, setOpenAdd] = useState(false);
@@ -186,29 +166,29 @@ export default function App() {
       const result = await res.json();
       const data = result.success ? result.data : {};
       setHeaders({
-        team_label: data.team_label || 'Team',
-        name_label: data.name_label || 'Name',
-        presence_label: data.presence_label || 'Status',
-        note1_label: data.note1_label || 'Note 1',
-        note2_label: data.note2_label || 'Note 2',
-        note3_label: data.note3_label || 'Note 3',
-        check1_label: data.check1_label || 'Check 1',
-        check2_label: data.check2_label || 'Check 2',
-        check3_label: data.check3_label || 'Check 3',
-        updated_at_label: data.updated_at_label || 'Last Updated',
-        hide_note1: data.hide_note1 ?? false,
-        hide_note2: data.hide_note2 ?? false,
-        hide_note3: data.hide_note3 ?? false,
-        hide_check1: data.hide_check1 ?? false,
-        hide_check2: data.hide_check2 ?? false,
-        hide_check3: data.hide_check3 ?? false,
-        hide_updated_at: data.hide_updated_at ?? false,
-        grid_width: data.grid_width ?? 460,
-        grid_height: data.grid_height ?? 460,
-        notes: data.notes || ''
+        team_label: data.team_label || DEFAULT_DASHBOARD_SETTINGS.team_label,
+        name_label: data.name_label || DEFAULT_DASHBOARD_SETTINGS.name_label,
+        presence_label: data.presence_label || DEFAULT_DASHBOARD_SETTINGS.presence_label,
+        note1_label: data.note1_label || DEFAULT_DASHBOARD_SETTINGS.note1_label,
+        note2_label: data.note2_label || DEFAULT_DASHBOARD_SETTINGS.note2_label,
+        note3_label: data.note3_label || DEFAULT_DASHBOARD_SETTINGS.note3_label,
+        check1_label: data.check1_label || DEFAULT_DASHBOARD_SETTINGS.check1_label,
+        check2_label: data.check2_label || DEFAULT_DASHBOARD_SETTINGS.check2_label,
+        check3_label: data.check3_label || DEFAULT_DASHBOARD_SETTINGS.check3_label,
+        updated_at_label: data.updated_at_label || DEFAULT_DASHBOARD_SETTINGS.updated_at_label,
+        hide_note1: data.hide_note1 ?? DEFAULT_DASHBOARD_SETTINGS.hide_note1,
+        hide_note2: data.hide_note2 ?? DEFAULT_DASHBOARD_SETTINGS.hide_note2,
+        hide_note3: data.hide_note3 ?? DEFAULT_DASHBOARD_SETTINGS.hide_note3,
+        hide_check1: data.hide_check1 ?? DEFAULT_DASHBOARD_SETTINGS.hide_check1,
+        hide_check2: data.hide_check2 ?? DEFAULT_DASHBOARD_SETTINGS.hide_check2,
+        hide_check3: data.hide_check3 ?? DEFAULT_DASHBOARD_SETTINGS.hide_check3,
+        hide_updated_at: data.hide_updated_at ?? DEFAULT_DASHBOARD_SETTINGS.hide_updated_at,
+        grid_width: data.grid_width ?? DEFAULT_DASHBOARD_SETTINGS.grid_width,
+        grid_height: data.grid_height ?? DEFAULT_DASHBOARD_SETTINGS.grid_height,
+        notes: data.notes || DEFAULT_DASHBOARD_SETTINGS.notes
       });
-      setGridWidth(data.grid_width ?? 460);
-      setGridHeight(data.grid_height ?? 460);
+      setGridWidth(data.grid_width ?? DEFAULT_DASHBOARD_SETTINGS.grid_width);
+      setGridHeight(data.grid_height ?? DEFAULT_DASHBOARD_SETTINGS.grid_height);
       setNotes(data.notes || '');
     } catch (err) { console.error(err); }
   }, [dashboardId]);
