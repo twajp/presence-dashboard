@@ -16,6 +16,7 @@ import DashboardCustomizeIcon from '@mui/icons-material/DashboardCustomize';
 import SettingsIcon from '@mui/icons-material/Settings';
 import EditIcon from '@mui/icons-material/Edit';
 import CheckIcon from '@mui/icons-material/Check';
+import { DEFAULT_DASHBOARD_SETTINGS } from './config/defaults';
 
 type PresenceStatus = 'present' | 'remote' | 'trip' | 'off';
 type Dashboard = { id: number; dashboard_name: string; };
@@ -129,28 +130,7 @@ export default function App() {
   const [loading, setLoading] = useState(true);
   const [isEditMode, setIsEditMode] = useState(false);
 
-  const [headers, setHeaders] = useState({
-    team_label: 'Team',
-    name_label: 'Name',
-    presence_label: 'Status',
-    note1_label: 'Note 1',
-    note2_label: 'Note 2',
-    note3_label: 'Note 3',
-    check1_label: 'Check 1',
-    check2_label: 'Check 2',
-    check3_label: 'Check 3',
-    updated_at_label: 'Last Updated',
-    hide_note1: false,
-    hide_note2: false,
-    hide_note3: false,
-    hide_check1: false,
-    hide_check2: false,
-    hide_check3: false,
-    hide_updated_at: false,
-    grid_width: 40,
-    grid_height: 70,
-    notes: ''
-  });
+  const [headers, setHeaders] = useState(DEFAULT_DASHBOARD_SETTINGS);
   const [editingHeader, setEditingHeader] = useState<string | null>(null);
 
   const [openAdd, setOpenAdd] = useState(false);
@@ -158,9 +138,9 @@ export default function App() {
   const [openDbSettings, setOpenDbSettings] = useState(false);
   const [presenceTarget, setPresenceTarget] = useState<User | null>(null);
   const [isResizingWidth, setIsResizingWidth] = useState(false);
-  const [gridWidth, setGridWidth] = useState(40);
+  const [gridWidth, setGridWidth] = useState(460);
   const [isResizingHeight, setIsResizingHeight] = useState(false);
-  const [gridHeight, setGridHeight] = useState(70);
+  const [gridHeight, setGridHeight] = useState(460);
   const [notes, setNotes] = useState('');
 
   const [newUser, setNewUser] = useState({ name: '', team: '' });
@@ -186,29 +166,29 @@ export default function App() {
       const result = await res.json();
       const data = result.success ? result.data : {};
       setHeaders({
-        team_label: data.team_label || 'Team',
-        name_label: data.name_label || 'Name',
-        presence_label: data.presence_label || 'Status',
-        note1_label: data.note1_label || 'Note 1',
-        note2_label: data.note2_label || 'Note 2',
-        note3_label: data.note3_label || 'Note 3',
-        check1_label: data.check1_label || 'Check 1',
-        check2_label: data.check2_label || 'Check 2',
-        check3_label: data.check3_label || 'Check 3',
-        updated_at_label: data.updated_at_label || 'Last Updated',
-        hide_note1: data.hide_note1 ?? false,
-        hide_note2: data.hide_note2 ?? false,
-        hide_note3: data.hide_note3 ?? false,
-        hide_check1: data.hide_check1 ?? false,
-        hide_check2: data.hide_check2 ?? false,
-        hide_check3: data.hide_check3 ?? false,
-        hide_updated_at: data.hide_updated_at ?? false,
-        grid_width: data.grid_width ?? 40,
-        grid_height: data.grid_height ?? 70,
-        notes: data.notes || ''
+        team_label: data.team_label || DEFAULT_DASHBOARD_SETTINGS.team_label,
+        name_label: data.name_label || DEFAULT_DASHBOARD_SETTINGS.name_label,
+        presence_label: data.presence_label || DEFAULT_DASHBOARD_SETTINGS.presence_label,
+        note1_label: data.note1_label || DEFAULT_DASHBOARD_SETTINGS.note1_label,
+        note2_label: data.note2_label || DEFAULT_DASHBOARD_SETTINGS.note2_label,
+        note3_label: data.note3_label || DEFAULT_DASHBOARD_SETTINGS.note3_label,
+        check1_label: data.check1_label || DEFAULT_DASHBOARD_SETTINGS.check1_label,
+        check2_label: data.check2_label || DEFAULT_DASHBOARD_SETTINGS.check2_label,
+        check3_label: data.check3_label || DEFAULT_DASHBOARD_SETTINGS.check3_label,
+        updated_at_label: data.updated_at_label || DEFAULT_DASHBOARD_SETTINGS.updated_at_label,
+        hide_note1: data.hide_note1 ?? DEFAULT_DASHBOARD_SETTINGS.hide_note1,
+        hide_note2: data.hide_note2 ?? DEFAULT_DASHBOARD_SETTINGS.hide_note2,
+        hide_note3: data.hide_note3 ?? DEFAULT_DASHBOARD_SETTINGS.hide_note3,
+        hide_check1: data.hide_check1 ?? DEFAULT_DASHBOARD_SETTINGS.hide_check1,
+        hide_check2: data.hide_check2 ?? DEFAULT_DASHBOARD_SETTINGS.hide_check2,
+        hide_check3: data.hide_check3 ?? DEFAULT_DASHBOARD_SETTINGS.hide_check3,
+        hide_updated_at: data.hide_updated_at ?? DEFAULT_DASHBOARD_SETTINGS.hide_updated_at,
+        grid_width: data.grid_width ?? DEFAULT_DASHBOARD_SETTINGS.grid_width,
+        grid_height: data.grid_height ?? DEFAULT_DASHBOARD_SETTINGS.grid_height,
+        notes: data.notes || DEFAULT_DASHBOARD_SETTINGS.notes
       });
-      setGridWidth(data.grid_width ?? 40);
-      setGridHeight(data.grid_height ?? 70);
+      setGridWidth(data.grid_width ?? DEFAULT_DASHBOARD_SETTINGS.grid_width);
+      setGridHeight(data.grid_height ?? DEFAULT_DASHBOARD_SETTINGS.grid_height);
       setNotes(data.notes || '');
     } catch (err) { console.error(err); }
   }, [dashboardId]);
@@ -287,17 +267,23 @@ export default function App() {
 
   const handleMouseMove = useCallback((e: MouseEvent) => {
     if (isResizingWidth) {
-      const newWidth = (e.clientX / window.innerWidth) * 100;
-      if (newWidth > 10 && newWidth < 90) {
-        setGridWidth(newWidth);
+      const newWidth = Math.round(e.clientX / 8) * 8;
+      if (newWidth > 200 && newWidth < window.innerWidth - 200) {
+        const leftPanel = document.getElementById('left-panel');
+        if (leftPanel) {
+          leftPanel.style.width = `${newWidth}px`;
+        }
       }
     } else if (isResizingHeight) {
       const leftPanel = document.getElementById('left-panel');
       if (leftPanel) {
         const rect = leftPanel.getBoundingClientRect();
-        const newHeight = ((e.clientY - rect.top) / rect.height) * 100;
-        if (newHeight > 10 && newHeight < 90) {
-          setGridHeight(newHeight);
+        const newHeight = Math.round((e.clientY - rect.top) / 8) * 8;
+        if (newHeight > 200 && newHeight < rect.height - 100) {
+          const gridArea = leftPanel.children[0] as HTMLElement;
+          if (gridArea) {
+            gridArea.style.height = `${newHeight}px`;
+          }
         }
       }
     }
@@ -305,13 +291,26 @@ export default function App() {
 
   const handleMouseUp = useCallback(() => {
     if (isResizingWidth) {
+      const leftPanel = document.getElementById('left-panel');
+      if (leftPanel) {
+        const finalWidth = parseInt(leftPanel.style.width);
+        setGridWidth(finalWidth);
+        saveGridWidth(finalWidth);
+      }
       setIsResizingWidth(false);
-      saveGridWidth(gridWidth);
     } else if (isResizingHeight) {
+      const leftPanel = document.getElementById('left-panel');
+      if (leftPanel) {
+        const gridArea = leftPanel.children[0] as HTMLElement;
+        if (gridArea) {
+          const finalHeight = parseInt(gridArea.style.height);
+          setGridHeight(finalHeight);
+          saveGridHeight(finalHeight);
+        }
+      }
       setIsResizingHeight(false);
-      saveGridHeight(gridHeight);
     }
-  }, [isResizingWidth, isResizingHeight, gridWidth, gridHeight]);
+  }, [isResizingWidth, isResizingHeight]);
 
   const saveGridHeight = async (height: number) => {
     if (dashboardId === '') return;
@@ -679,8 +678,8 @@ export default function App() {
 
         {loading && dashboardId !== '' ? <Box flex={1} display='flex' justifyContent='center' alignItems='center'><CircularProgress /></Box> : (
           <Box display='flex' flex={1} overflow='hidden'>
-            <Box id='left-panel' width={`${gridWidth}%`} display='flex' flexDirection='column' overflow='hidden'>
-              <Box height={`${gridHeight}%`} position='relative' sx={{ backgroundImage: isEditMode ? `radial-gradient(${theme.palette.divider} 1px, transparent 1px)` : 'none', backgroundSize: '20px 20px', overflow: 'auto', bgcolor: 'background.default' }}>
+            <Box id='left-panel' width={`${gridWidth}px`} display='flex' flexDirection='column' overflow='hidden'>
+              <Box height={`${gridHeight}px`} position='relative' sx={{ backgroundImage: isEditMode ? `radial-gradient(${theme.palette.divider} 1px, transparent 1px)` : 'none', backgroundSize: '20px 20px', overflow: 'auto', bgcolor: 'background.default' }}>
                 {seats.map(s => <SeatItem key={s.id} seat={s} onUpdate={updateSeat} users={users} isEditMode={isEditMode} onStatusClick={(u) => setPresenceTarget(u)} />)}
               </Box>
               <Box
