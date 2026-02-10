@@ -1,6 +1,6 @@
 import express from 'express';
 import { createConnection, Connection, ResultSetHeader, RowDataPacket } from 'mysql2/promise';
-import { DEFAULT_DASHBOARD_SETTINGS } from './config/defaults';
+import { DEFAULT_DASHBOARD_SETTINGS } from './config/defaults.js';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
