@@ -1,21 +1,22 @@
 import { useRef, useState, useEffect, useCallback, useMemo } from 'react';
 import Draggable from 'react-draggable';
-import { DataGrid } from '@mui/x-data-grid';
-import type { GridColDef } from '@mui/x-data-grid';
+import { DataGrid, type GridColDef } from '@mui/x-data-grid';
 import {
-  Button, CircularProgress, Box, ThemeProvider,
-  createTheme, CssBaseline, useMediaQuery, Select, MenuItem, FormControl,
-  InputLabel, Typography, IconButton, Dialog, DialogTitle, DialogContent,
-  TextField, DialogActions, Stack, Tooltip
+  Button, CircularProgress, Box, ThemeProvider, createTheme, CssBaseline,
+  useMediaQuery, Select, MenuItem, FormControl, InputLabel, Typography,
+  IconButton, Dialog, DialogTitle, DialogContent, TextField, DialogActions,
+  Stack, Tooltip
 } from '@mui/material';
-import DeleteIcon from '@mui/icons-material/Delete';
-import AddIcon from '@mui/icons-material/Add';
-import ArrowUpwardIcon from '@mui/icons-material/ArrowUpward';
-import ArrowDownwardIcon from '@mui/icons-material/ArrowDownward';
-import DashboardCustomizeIcon from '@mui/icons-material/DashboardCustomize';
-import SettingsIcon from '@mui/icons-material/Settings';
-import EditIcon from '@mui/icons-material/Edit';
-import CheckIcon from '@mui/icons-material/Check';
+import {
+  Delete as DeleteIcon,
+  Add as AddIcon,
+  ArrowUpward as ArrowUpwardIcon,
+  ArrowDownward as ArrowDownwardIcon,
+  DashboardCustomize as DashboardCustomizeIcon,
+  Settings as SettingsIcon,
+  Edit as EditIcon,
+  Check as CheckIcon
+} from '@mui/icons-material';
 import { DEFAULT_DASHBOARD_SETTINGS } from './config/defaults';
 
 type PresenceStatus = 'present' | 'remote' | 'trip' | 'off';
