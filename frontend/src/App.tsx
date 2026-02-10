@@ -147,8 +147,8 @@ export default function App() {
     hide_check2: false,
     hide_check3: false,
     hide_updated_at: false,
-    grid_width: 40,
-    grid_height: 70,
+    grid_width: 460,
+    grid_height: 460,
     notes: ''
   });
   const [editingHeader, setEditingHeader] = useState<string | null>(null);
@@ -158,9 +158,9 @@ export default function App() {
   const [openDbSettings, setOpenDbSettings] = useState(false);
   const [presenceTarget, setPresenceTarget] = useState<User | null>(null);
   const [isResizingWidth, setIsResizingWidth] = useState(false);
-  const [gridWidth, setGridWidth] = useState(40);
+  const [gridWidth, setGridWidth] = useState(460);
   const [isResizingHeight, setIsResizingHeight] = useState(false);
-  const [gridHeight, setGridHeight] = useState(70);
+  const [gridHeight, setGridHeight] = useState(460);
   const [notes, setNotes] = useState('');
 
   const [newUser, setNewUser] = useState({ name: '', team: '' });
@@ -203,12 +203,12 @@ export default function App() {
         hide_check2: data.hide_check2 ?? false,
         hide_check3: data.hide_check3 ?? false,
         hide_updated_at: data.hide_updated_at ?? false,
-        grid_width: data.grid_width ?? 40,
-        grid_height: data.grid_height ?? 70,
+        grid_width: data.grid_width ?? 460,
+        grid_height: data.grid_height ?? 460,
         notes: data.notes || ''
       });
-      setGridWidth(data.grid_width ?? 40);
-      setGridHeight(data.grid_height ?? 70);
+      setGridWidth(data.grid_width ?? 460);
+      setGridHeight(data.grid_height ?? 460);
       setNotes(data.notes || '');
     } catch (err) { console.error(err); }
   }, [dashboardId]);
@@ -287,17 +287,23 @@ export default function App() {
 
   const handleMouseMove = useCallback((e: MouseEvent) => {
     if (isResizingWidth) {
-      const newWidth = (e.clientX / window.innerWidth) * 100;
-      if (newWidth > 10 && newWidth < 90) {
-        setGridWidth(newWidth);
+      const newWidth = Math.round(e.clientX / 8) * 8;
+      if (newWidth > 200 && newWidth < window.innerWidth - 200) {
+        const leftPanel = document.getElementById('left-panel');
+        if (leftPanel) {
+          leftPanel.style.width = `${newWidth}px`;
+        }
       }
     } else if (isResizingHeight) {
       const leftPanel = document.getElementById('left-panel');
       if (leftPanel) {
         const rect = leftPanel.getBoundingClientRect();
-        const newHeight = ((e.clientY - rect.top) / rect.height) * 100;
-        if (newHeight > 10 && newHeight < 90) {
-          setGridHeight(newHeight);
+        const newHeight = Math.round((e.clientY - rect.top) / 8) * 8;
+        if (newHeight > 200 && newHeight < rect.height - 100) {
+          const gridArea = leftPanel.children[0] as HTMLElement;
+          if (gridArea) {
+            gridArea.style.height = `${newHeight}px`;
+          }
         }
       }
     }
@@ -305,13 +311,26 @@ export default function App() {
 
   const handleMouseUp = useCallback(() => {
     if (isResizingWidth) {
+      const leftPanel = document.getElementById('left-panel');
+      if (leftPanel) {
+        const finalWidth = parseInt(leftPanel.style.width);
+        setGridWidth(finalWidth);
+        saveGridWidth(finalWidth);
+      }
       setIsResizingWidth(false);
-      saveGridWidth(gridWidth);
     } else if (isResizingHeight) {
+      const leftPanel = document.getElementById('left-panel');
+      if (leftPanel) {
+        const gridArea = leftPanel.children[0] as HTMLElement;
+        if (gridArea) {
+          const finalHeight = parseInt(gridArea.style.height);
+          setGridHeight(finalHeight);
+          saveGridHeight(finalHeight);
+        }
+      }
       setIsResizingHeight(false);
-      saveGridHeight(gridHeight);
     }
-  }, [isResizingWidth, isResizingHeight, gridWidth, gridHeight]);
+  }, [isResizingWidth, isResizingHeight]);
 
   const saveGridHeight = async (height: number) => {
     if (dashboardId === '') return;
@@ -679,8 +698,8 @@ export default function App() {
 
         {loading && dashboardId !== '' ? <Box flex={1} display='flex' justifyContent='center' alignItems='center'><CircularProgress /></Box> : (
           <Box display='flex' flex={1} overflow='hidden'>
-            <Box id='left-panel' width={`${gridWidth}%`} display='flex' flexDirection='column' overflow='hidden'>
-              <Box height={`${gridHeight}%`} position='relative' sx={{ backgroundImage: isEditMode ? `radial-gradient(${theme.palette.divider} 1px, transparent 1px)` : 'none', backgroundSize: '20px 20px', overflow: 'auto', bgcolor: 'background.default' }}>
+            <Box id='left-panel' width={`${gridWidth}px`} display='flex' flexDirection='column' overflow='hidden'>
+              <Box height={`${gridHeight}px`} position='relative' sx={{ backgroundImage: isEditMode ? `radial-gradient(${theme.palette.divider} 1px, transparent 1px)` : 'none', backgroundSize: '20px 20px', overflow: 'auto', bgcolor: 'background.default' }}>
                 {seats.map(s => <SeatItem key={s.id} seat={s} onUpdate={updateSeat} users={users} isEditMode={isEditMode} onStatusClick={(u) => setPresenceTarget(u)} />)}
               </Box>
               <Box
