@@ -69,9 +69,10 @@ function PresenceDialog({ open, onClose, currentStatus, onSelect }: {
   );
 }
 
-function SeatItem({ seat, onUpdate, users, isEditMode, onStatusClick }: {
+function SeatItem({ seat, onUpdate, users, isEditMode, onStatusClick, prefersDarkMode }: {
   seat: Seat; onUpdate: (id: number, data: Partial<User>) => void;
   users: User[]; isEditMode: boolean; onStatusClick: (user: User) => void;
+  prefersDarkMode: boolean;
 }) {
   const draggedRef = useRef(false);
   const nodeRef = useRef<HTMLDivElement>(null);
@@ -94,11 +95,13 @@ function SeatItem({ seat, onUpdate, users, isEditMode, onStatusClick }: {
           onStatusClick(user);
         }}
         style={{
-          width: 80, height: 40, backgroundColor: STATUS_CONFIG[seat.status].color,
+          width: 80, height: 40, fontSize: '0.875rem',
           display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-          cursor: isEditMode ? 'move' : 'pointer',
-          userSelect: 'none', position: 'absolute', color: '#fff', fontSize: '0.875rem',
-          outline: isEditMode ? '2px solid #2196f3' : 'none',
+          backgroundColor: isEditMode ? (prefersDarkMode ? '#393939' : '#e0e0e0') : STATUS_CONFIG[seat.status].color,
+          // color: isEditMode ? (prefersDarkMode ? '#757575' : '#bdbdbd') : '#fff',
+          color: isEditMode ? (prefersDarkMode ? '#fff' : '#000') : '#fff',
+          outline: isEditMode ? (prefersDarkMode ? '2px solid #757575' : '2px solid #bdbdbd') : 'none',
+          cursor: isEditMode ? 'move' : 'pointer', userSelect: 'none', position: 'absolute',
           boxShadow: '0 2px 6px rgba(0,0,0,0.3)', borderRadius: '4px', zIndex: isEditMode ? 100 : 1
         }}
       >
@@ -675,7 +678,7 @@ export default function App() {
           <Box display='flex' flex={1} overflow='hidden'>
             <Box id='left-panel' width={`${gridWidth}px`} display='flex' flexDirection='column' overflow='hidden'>
               <Box height={`${gridHeight}px`} position='relative' sx={{ backgroundImage: isEditMode ? `radial-gradient(${theme.palette.divider} 1px, transparent 1px)` : 'none', backgroundSize: '20px 20px', overflow: 'auto', bgcolor: 'background.default' }}>
-                {seats.map(s => <SeatItem key={s.id} seat={s} onUpdate={updateSeat} users={users} isEditMode={isEditMode} onStatusClick={(u) => setPresenceTarget(u)} />)}
+                {seats.map(s => <SeatItem key={s.id} seat={s} onUpdate={updateSeat} users={users} isEditMode={isEditMode} onStatusClick={(u) => setPresenceTarget(u)} prefersDarkMode={prefersDarkMode} />)}
               </Box>
               <Box
                 sx={{
