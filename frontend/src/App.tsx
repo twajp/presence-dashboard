@@ -482,7 +482,7 @@ export default function App() {
       renderHeader: () => <EditableHeader label={headers.name_label} fieldKey='name_label' />
     },
     {
-      field: 'presence', headerName: headers.presence_label, width: 84, sortable: false, disableColumnMenu: true,
+      field: 'presence', headerName: headers.presence_label, width: 100, sortable: false, disableColumnMenu: true,
       renderHeader: () => <EditableHeader label={headers.presence_label} fieldKey='presence_label' />,
       renderCell: (p) => (
         <Button size='small' variant='contained' disabled={isEditMode}
