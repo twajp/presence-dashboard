@@ -85,7 +85,7 @@ function SeatItem({ seat, onUpdate, users, isEditMode, onStatusClick }: {
     <Draggable
       nodeRef={nodeRef}
       position={{ x: seat.x, y: seat.y }}
-      grid={[10, 10]}
+      grid={[8, 8]}
       disabled={!isEditMode}
       onStart={() => { draggedRef.current = false; }}
       onDrag={() => { draggedRef.current = true; }}
@@ -98,10 +98,10 @@ function SeatItem({ seat, onUpdate, users, isEditMode, onStatusClick }: {
           onStatusClick(user);
         }}
         style={{
-          width: 100, height: 50, backgroundColor: STATUS_CONFIG[seat.status].color,
+          width: 80, height: 40, backgroundColor: STATUS_CONFIG[seat.status].color,
           display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
           cursor: isEditMode ? 'move' : 'pointer',
-          userSelect: 'none', position: 'absolute', color: '#fff', fontSize: 16,
+          userSelect: 'none', position: 'absolute', color: '#fff', fontSize: '0.875rem',
           outline: isEditMode ? '2px solid #2196f3' : 'none',
           boxShadow: '0 2px 6px rgba(0,0,0,0.3)', borderRadius: '4px', zIndex: isEditMode ? 100 : 1
         }}
@@ -477,12 +477,12 @@ export default function App() {
       renderHeader: () => <EditableHeader label={headers.team_label} fieldKey='team_label' />
     },
     {
-      field: 'name', headerName: headers.name_label, width: 120,
+      field: 'name', headerName: headers.name_label, width: 100,
       editable: isEditMode, sortable: false, disableColumnMenu: true,
       renderHeader: () => <EditableHeader label={headers.name_label} fieldKey='name_label' />
     },
     {
-      field: 'presence', headerName: headers.presence_label, width: 100, sortable: false, disableColumnMenu: true,
+      field: 'presence', headerName: headers.presence_label, width: 84, sortable: false, disableColumnMenu: true,
       renderHeader: () => <EditableHeader label={headers.presence_label} fieldKey='presence_label' />,
       renderCell: (p) => (
         <Button size='small' variant='contained' disabled={isEditMode}
