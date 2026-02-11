@@ -292,6 +292,7 @@ export default function App() {
   const [seats, setSeats] = useState<Seat[]>([]);
   const [loading, setLoading] = useState(true);
   const [isEditMode, setIsEditMode] = useState(false);
+  const [editWarningOpen, setEditWarningOpen] = useState(false);
 
   const [headers, setHeaders] = useState(DEFAULT_DASHBOARD_SETTINGS);
   const [editingHeader, setEditingHeader] = useState<string | null>(null);
@@ -875,7 +876,10 @@ export default function App() {
                 startIcon={<EditIcon />}
                 variant='outlined'
                 size="small"
-                onClick={() => setIsEditMode(true)}
+                onClick={() => {
+                  setIsEditMode(true);
+                  setEditWarningOpen(true);
+                }}
                 sx={{ minWidth: '90px', fontSize: '1rem' }}
               >
                 Edit
@@ -996,6 +1000,36 @@ export default function App() {
             <Button onClick={() => setOpenDbSettings(false)}>Cancel</Button>
             <Button onClick={handleUpdateDashboard} variant='contained' color='primary' disabled={!editDbName}>
               Save Changes
+            </Button>
+          </DialogActions>
+        </Dialog>
+
+        {/* Edit Mode Warning Dialog */}
+        <Dialog
+          open={editWarningOpen}
+          onClose={() => setEditWarningOpen(false)}
+          maxWidth='sm'
+          fullWidth
+        >
+          <DialogTitle sx={{ fontWeight: 'bold', color: 'warning.main' }}>
+            Edit Mode Activated
+          </DialogTitle>
+          <DialogContent>
+            <Typography>
+              Changes made in edit mode will be reflected in real-time for all users viewing this dashboard.
+            </Typography>
+            <Typography sx={{ mt: 2, fontWeight: 'bold', color: 'warning.main' }}>
+              Warning: Changes will be immediately visible to everyone.
+            </Typography>
+          </DialogContent>
+          <DialogActions>
+            <Button
+              onClick={() => setEditWarningOpen(false)}
+              variant='contained'
+              color='primary'
+              fullWidth
+            >
+              OK
             </Button>
           </DialogActions>
         </Dialog>
