@@ -40,11 +40,14 @@ const STATUS_ORDER = PRESENCE_STATUSES;
 // --- Sub-Components ---
 
 function PresenceDialog({ open, onClose, currentStatus, onSelect }: {
-  open: boolean; onClose: () => void; currentStatus?: PresenceStatus; onSelect: (status: PresenceStatus) => void;
+  open: boolean; onClose: () => void; currentStatus?: PresenceStatus;
+  onSelect: (status: PresenceStatus) => void;
 }) {
   return (
     <Dialog open={open} onClose={onClose} maxWidth='xs' fullWidth>
-      <DialogTitle sx={{ textAlign: 'center' }}>Set Presence</DialogTitle>
+      <DialogTitle sx={{ textAlign: 'center' }}>
+        Set Presence
+      </DialogTitle>
       <DialogContent>
         <Stack spacing={2} py={1}>
           {STATUS_ORDER.map((status) => (
@@ -70,9 +73,65 @@ function PresenceDialog({ open, onClose, currentStatus, onSelect }: {
   );
 }
 
+function LegendBar({ onBulkSet }: { onBulkSet: (status: PresenceStatus) => void }) {
+  return (
+    <Box
+      sx={{
+        display: 'flex',
+        gap: 2,
+        px: 2,
+        py: 1,
+        bgcolor: 'background.paper',
+        borderBottom: 1,
+        borderColor: 'divider',
+        flexWrap: 'wrap',
+        alignItems: 'center',
+      }}
+    >
+      <Typography variant='caption' fontWeight='bold'>
+        Legend:
+      </Typography>
+      {STATUS_ORDER.map((status) => (
+        <Box
+          key={status}
+          onClick={() => onBulkSet(status)}
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 0.5,
+            cursor: 'pointer',
+            px: 1,
+            py: 0.5,
+            borderRadius: 1,
+            transition: 'background-color 0.2s',
+            '&:hover': {
+              bgcolor: 'action.hover'
+            }
+          }}
+        >
+          <Box
+            sx={{
+              width: 16,
+              height: 16,
+              bgcolor: STATUS_CONFIG[status].color,
+              borderRadius: 0.5,
+              border: '1px solid',
+              borderColor: 'divider'
+            }}
+          />
+          <Typography variant='caption'>
+            {STATUS_CONFIG[status].label}
+          </Typography>
+        </Box>
+      ))}
+    </Box>
+  );
+}
+
 function SeatItem({ seat, onUpdate, users, isSettingsMode, onStatusClick, prefersDarkMode }: {
   seat: Seat; onUpdate: (id: number, data: Partial<User>) => void;
-  users: User[]; isSettingsMode: boolean; onStatusClick: (user: User) => void;
+  users: User[]; isSettingsMode: boolean;
+  onStatusClick: (user: User) => void;
   prefersDarkMode: boolean;
 }) {
   const draggedRef = useRef(false);
@@ -301,6 +360,8 @@ export default function App() {
   const [openAddDb, setOpenAddDb] = useState(false);
   const [openRenameDb, setOpenRenameDb] = useState(false);
   const [presenceTarget, setPresenceTarget] = useState<User | null>(null);
+  const [bulkConfirmOpen, setBulkConfirmOpen] = useState(false);
+  const [bulkConfirmStatus, setBulkConfirmStatus] = useState<PresenceStatus | null>(null);
   const [isResizingWidth, setIsResizingWidth] = useState(false);
   const [gridWidth, setGridWidth] = useState(DEFAULT_DASHBOARD_SETTINGS.grid_width);
   const [isResizingHeight, setIsResizingHeight] = useState(false);
@@ -407,6 +468,22 @@ export default function App() {
       setSeats(prev => prev.map(s => s.id === id ? { ...s, status: result.data.presence || s.status, x: result.data.x ?? s.x, y: result.data.y ?? s.y } : s));
     }
   }, [users]);
+
+  const bulkUpdatePresence = useCallback(async (status: PresenceStatus) => {
+    // Update all users at once
+    const updatePromises = users.map(user =>
+      fetch(`${API_BASE_URL}/api/users/${user.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ...user, presence: status }),
+      })
+    );
+
+    await Promise.all(updatePromises);
+
+    // Refresh users after bulk update
+    fetchUsers();
+  }, [users, fetchUsers]);
 
   const saveHeader = async (newHeaders: typeof headers) => {
     if (dashboardId === '') return;
@@ -887,6 +964,10 @@ export default function App() {
         {loading && dashboardId !== '' ? <Box flex={1} display='flex' justifyContent='center' alignItems='center'><CircularProgress /></Box> : (
           <Box display='flex' flex={1} overflow='hidden'>
             <Box id='left-panel' width={`${gridWidth}px`} display='flex' flexDirection='column' overflow='hidden'>
+              <LegendBar onBulkSet={(status) => {
+                setBulkConfirmStatus(status);
+                setBulkConfirmOpen(true);
+              }} />
               <Box height={`${gridHeight}px`} position='relative' sx={{ backgroundImage: isSettingsMode ? `radial-gradient(${theme.palette.divider} 1px, transparent 1px)` : 'none', backgroundSize: '20px 20px', overflow: 'auto', bgcolor: 'background.default' }}>
                 {seats.map(s => <SeatItem key={s.id} seat={s} onUpdate={updateSeat} users={users} isSettingsMode={isSettingsMode} onStatusClick={(u) => setPresenceTarget(u)} prefersDarkMode={prefersDarkMode} />)}
               </Box>
@@ -942,7 +1023,16 @@ export default function App() {
           </Box>
         )}
 
-        <PresenceDialog open={!!presenceTarget} onClose={() => setPresenceTarget(null)} currentStatus={presenceTarget?.presence} onSelect={(status) => presenceTarget && updateSeat(presenceTarget.id, { presence: status })} />
+        <PresenceDialog
+          open={!!presenceTarget}
+          onClose={() => setPresenceTarget(null)}
+          currentStatus={presenceTarget?.presence}
+          onSelect={(status) => {
+            if (presenceTarget) {
+              updateSeat(presenceTarget.id, { presence: status });
+            }
+          }}
+        />
 
         {/* Add Member Dialog */}
         <Dialog open={openAdd} onClose={() => setOpenAdd(false)}>
@@ -996,6 +1086,60 @@ export default function App() {
             <Button onClick={() => setOpenRenameDb(false)}>Cancel</Button>
             <Button onClick={handleUpdateDashboard} variant='contained' color='primary' disabled={!renameDbName}>
               Save Changes
+            </Button>
+          </DialogActions>
+        </Dialog>
+
+        {/* Bulk Update Confirmation Dialog */}
+        <Dialog
+          open={bulkConfirmOpen}
+          onClose={() => setBulkConfirmOpen(false)}
+          maxWidth='xs'
+          fullWidth
+        >
+          <DialogTitle sx={{ fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: 1 }}>
+            Bulk Update Confirmation
+          </DialogTitle>
+          <DialogContent>
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, py: 1 }}>
+              <Typography>Change the presence status of all users to:</Typography>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                {bulkConfirmStatus && (
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <Box
+                      sx={{
+                        width: 20,
+                        height: 20,
+                        bgcolor: STATUS_CONFIG[bulkConfirmStatus].color,
+                        borderRadius: 0.5,
+                        border: '1px solid',
+                        borderColor: 'divider',
+                      }}
+                    />
+                    <Typography fontWeight='bold'>
+                      {STATUS_CONFIG[bulkConfirmStatus].label}
+                    </Typography>
+                  </Box>
+                )}
+              </Box>
+              <Typography>Are you sure you want to proceed with this action?</Typography>
+            </Box>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={() => setBulkConfirmOpen(false)}>
+              Cancel
+            </Button>
+            <Button
+              onClick={() => {
+                if (bulkConfirmStatus) {
+                  bulkUpdatePresence(bulkConfirmStatus);
+                }
+                setBulkConfirmOpen(false);
+              }}
+              variant='contained'
+              color='primary'
+            >
+              Confirm
             </Button>
           </DialogActions>
         </Dialog>
