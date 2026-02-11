@@ -70,9 +70,9 @@ function PresenceDialog({ open, onClose, currentStatus, onSelect }: {
   );
 }
 
-function SeatItem({ seat, onUpdate, users, isEditMode, onStatusClick, prefersDarkMode }: {
+function SeatItem({ seat, onUpdate, users, isSettingsMode, onStatusClick, prefersDarkMode }: {
   seat: Seat; onUpdate: (id: number, data: Partial<User>) => void;
-  users: User[]; isEditMode: boolean; onStatusClick: (user: User) => void;
+  users: User[]; isSettingsMode: boolean; onStatusClick: (user: User) => void;
   prefersDarkMode: boolean;
 }) {
   const draggedRef = useRef(false);
@@ -86,7 +86,7 @@ function SeatItem({ seat, onUpdate, users, isEditMode, onStatusClick, prefersDar
   const isVertical = height > width;
 
   const handleResizeStart = useCallback((e: React.MouseEvent, corner: string) => {
-    if (!isEditMode) return;
+    if (!isSettingsMode) return;
     e.stopPropagation();
     e.preventDefault();
     setIsResizing(true);
@@ -99,7 +99,7 @@ function SeatItem({ seat, onUpdate, users, isEditMode, onStatusClick, prefersDar
       startX: seat.x,
       startY: seat.y
     });
-  }, [isEditMode, width, height, seat.x, seat.y]);
+  }, [isSettingsMode, width, height, seat.x, seat.y]);
 
   useEffect(() => {
     if (!isResizing) return;
@@ -161,7 +161,7 @@ function SeatItem({ seat, onUpdate, users, isEditMode, onStatusClick, prefersDar
       nodeRef={nodeRef}
       position={{ x: seat.x, y: seat.y }}
       grid={[8, 8]}
-      disabled={!isEditMode || isResizing}
+      disabled={!isSettingsMode || isResizing}
       onStart={() => { draggedRef.current = false; }}
       onDrag={() => { draggedRef.current = true; }}
       onStop={(_e, data) => { onUpdate(seat.id, { x: data.x, y: data.y }); }}
@@ -169,7 +169,7 @@ function SeatItem({ seat, onUpdate, users, isEditMode, onStatusClick, prefersDar
       <div
         ref={nodeRef}
         onClick={() => {
-          if (draggedRef.current || isEditMode || !user) return;
+          if (draggedRef.current || isSettingsMode || !user) return;
           onStatusClick(user);
         }}
         style={{
@@ -180,15 +180,15 @@ function SeatItem({ seat, onUpdate, users, isEditMode, onStatusClick, prefersDar
           flexDirection: isVertical ? 'column' : 'row',
           alignItems: 'center',
           justifyContent: 'center',
-          backgroundColor: isEditMode ? (prefersDarkMode ? '#393939' : '#e0e0e0') : STATUS_CONFIG[seat.status].color,
-          color: isEditMode ? (prefersDarkMode ? '#fff' : '#000') : '#fff',
-          outline: isEditMode ? (prefersDarkMode ? '2px solid #757575' : '2px solid #bdbdbd') : 'none',
-          cursor: isEditMode ? 'move' : 'pointer',
+          backgroundColor: isSettingsMode ? (prefersDarkMode ? '#393939' : '#e0e0e0') : STATUS_CONFIG[seat.status].color,
+          color: isSettingsMode ? (prefersDarkMode ? '#fff' : '#000') : '#fff',
+          outline: isSettingsMode ? (prefersDarkMode ? '2px solid #757575' : '2px solid #bdbdbd') : 'none',
+          cursor: isSettingsMode ? 'move' : 'pointer',
           userSelect: 'none',
           position: 'absolute',
           boxShadow: '0 2px 6px rgba(0,0,0,0.3)',
           borderRadius: '4px',
-          zIndex: isEditMode ? 100 : 1,
+          zIndex: isSettingsMode ? 100 : 1,
           // padding: '4px',
           overflow: 'hidden',
           textAlign: 'center',
@@ -207,7 +207,7 @@ function SeatItem({ seat, onUpdate, users, isEditMode, onStatusClick, prefersDar
           WebkitBoxOrient: 'vertical'
         }}>{user.name}</div>}
 
-        {isEditMode && (
+        {isSettingsMode && (
           <>
             {/* Top Left */}
             <div
@@ -291,15 +291,15 @@ export default function App() {
   const [users, setUsers] = useState<User[]>([]);
   const [seats, setSeats] = useState<Seat[]>([]);
   const [loading, setLoading] = useState(true);
-  const [isEditMode, setIsEditMode] = useState(false);
-  const [editWarningOpen, setEditWarningOpen] = useState(false);
+  const [isSettingsMode, setIsSettingsMode] = useState(false);
+  const [settingsWarningOpen, setSettingsWarningOpen] = useState(false);
 
   const [headers, setHeaders] = useState(DEFAULT_DASHBOARD_SETTINGS);
   const [editingHeader, setEditingHeader] = useState<string | null>(null);
 
   const [openAdd, setOpenAdd] = useState(false);
   const [openAddDb, setOpenAddDb] = useState(false);
-  const [openDbSettings, setOpenDbSettings] = useState(false);
+  const [openRenameDb, setOpenRenameDb] = useState(false);
   const [presenceTarget, setPresenceTarget] = useState<User | null>(null);
   const [isResizingWidth, setIsResizingWidth] = useState(false);
   const [gridWidth, setGridWidth] = useState(DEFAULT_DASHBOARD_SETTINGS.grid_width);
@@ -309,7 +309,7 @@ export default function App() {
 
   const [newUser, setNewUser] = useState({ name: '', team: '' });
   const [newDbName, setNewDbName] = useState('');
-  const [editDbName, setEditDbName] = useState('');
+  const [renameDbName, setRenameDbName] = useState('');
 
   const fetchDashboards = useCallback(async () => {
     try {
@@ -385,10 +385,10 @@ export default function App() {
     if (dashboardId !== '') {
       fetchUsers();
       fetchHeaderLabels();
-      let interval = !isEditMode ? setInterval(fetchUsers, 10000) : undefined;
+      let interval = !isSettingsMode ? setInterval(fetchUsers, 10000) : undefined;
       return () => clearInterval(interval);
     }
-  }, [fetchUsers, fetchHeaderLabels, isEditMode, dashboardId]);
+  }, [fetchUsers, fetchHeaderLabels, isSettingsMode, dashboardId]);
 
   const updateSeat = useCallback(async (id: number, data: Partial<User>) => {
     const user = users.find((u) => u.id === id);
@@ -430,12 +430,12 @@ export default function App() {
   };
 
   const handleWidthResizeStart = () => {
-    if (!isEditMode) return;
+    if (!isSettingsMode) return;
     setIsResizingWidth(true);
   };
 
   const handleHeightResizeStart = () => {
-    if (!isEditMode) return;
+    if (!isSettingsMode) return;
     setIsResizingHeight(true);
   };
 
@@ -600,9 +600,9 @@ export default function App() {
     if (dashboardId === '') return;
     await fetch(`${API_BASE_URL}/api/dashboards/${dashboardId}`, {
       method: 'PUT', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ dashboard_name: editDbName }),
+      body: JSON.stringify({ dashboard_name: renameDbName }),
     });
-    setOpenDbSettings(false);
+    setOpenRenameDb(false);
     fetchDashboards();
   };
 
@@ -615,7 +615,7 @@ export default function App() {
     });
 
     if (res.ok) {
-      setOpenDbSettings(false);
+      setOpenRenameDb(false);
       setDashboardId('');
       localStorage.removeItem('selectedDashboardId');
       await fetchDashboards();
@@ -624,7 +624,7 @@ export default function App() {
 
   const EditableHeader = ({ label, fieldKey, hideFieldKey }: { label: string, fieldKey: keyof typeof headers, hideFieldKey?: keyof typeof headers }) => {
     const [tempValue, setTempValue] = useState(label);
-    if (isEditMode && editingHeader === fieldKey) {
+    if (isSettingsMode && editingHeader === fieldKey) {
       return (
         <TextField
           variant='standard'
@@ -649,11 +649,11 @@ export default function App() {
     }
     return (
       <Box
-        sx={{ cursor: isEditMode ? 'pointer' : 'inherit', width: '100%', display: 'flex', alignItems: 'center', gap: 0.5 }}
-        onClick={() => isEditMode && setEditingHeader(fieldKey)}
+        sx={{ cursor: isSettingsMode ? 'pointer' : 'inherit', width: '100%', display: 'flex', alignItems: 'center', gap: 0.5 }}
+        onClick={() => isSettingsMode && setEditingHeader(fieldKey)}
       >
         {label}
-        {isEditMode && hideFieldKey && (
+        {isSettingsMode && hideFieldKey && (
           <input
             type='checkbox'
             checked={!headers[hideFieldKey]}
@@ -675,19 +675,19 @@ export default function App() {
   const columns: GridColDef[] = [
     {
       field: 'team', headerName: headers.team_label, width: headers.team_width ?? 120,
-      editable: isEditMode, sortable: false, disableColumnMenu: true, resizable: isEditMode,
+      editable: isSettingsMode, sortable: false, disableColumnMenu: true, resizable: isSettingsMode,
       renderHeader: () => <EditableHeader label={headers.team_label} fieldKey='team_label' />
     },
     {
       field: 'name', headerName: headers.name_label, width: headers.name_width ?? 100,
-      editable: isEditMode, sortable: false, disableColumnMenu: true, resizable: isEditMode,
+      editable: isSettingsMode, sortable: false, disableColumnMenu: true, resizable: isSettingsMode,
       renderHeader: () => <EditableHeader label={headers.name_label} fieldKey='name_label' />
     },
     {
-      field: 'presence', headerName: headers.presence_label, width: headers.presence_width ?? 100, sortable: false, disableColumnMenu: true, resizable: isEditMode,
+      field: 'presence', headerName: headers.presence_label, width: headers.presence_width ?? 100, sortable: false, disableColumnMenu: true, resizable: isSettingsMode,
       renderHeader: () => <EditableHeader label={headers.presence_label} fieldKey='presence_label' />,
       renderCell: (p) => (
-        <Button size='small' variant='contained' disabled={isEditMode}
+        <Button size='small' variant='contained' disabled={isSettingsMode}
           onClick={() => setPresenceTarget(p.row as User)}
           sx={{
             width: '100%',
@@ -699,30 +699,30 @@ export default function App() {
         > {STATUS_CONFIG[p.row.presence as PresenceStatus].label} </Button>
       ),
     },
-    ...(!headers.hide_note1 || isEditMode ? [{
+    ...(!headers.hide_note1 || isSettingsMode ? [{
       field: 'note1',
       headerName: headers.note1_label,
       ...(headers.note1_width ? { flex: headers.note1_width } : { flex: 100 }),
-      editable: true, sortable: false, disableColumnMenu: true, resizable: isEditMode,
+      editable: true, sortable: false, disableColumnMenu: true, resizable: isSettingsMode,
       renderHeader: () => <EditableHeader label={headers.note1_label} fieldKey='note1_label' hideFieldKey='hide_note1' />
     }] : []),
-    ...(!headers.hide_note2 || isEditMode ? [{
+    ...(!headers.hide_note2 || isSettingsMode ? [{
       field: 'note2',
       headerName: headers.note2_label,
       ...(headers.note2_width ? { flex: headers.note2_width } : { flex: 100 }),
-      editable: true, sortable: false, disableColumnMenu: true, resizable: isEditMode,
+      editable: true, sortable: false, disableColumnMenu: true, resizable: isSettingsMode,
       renderHeader: () => <EditableHeader label={headers.note2_label} fieldKey='note2_label' hideFieldKey='hide_note2' />
     }] : []),
-    ...(!headers.hide_note3 || isEditMode ? [{
+    ...(!headers.hide_note3 || isSettingsMode ? [{
       field: 'note3',
       headerName: headers.note3_label,
       ...(headers.note3_width ? { flex: headers.note3_width } : { flex: 100 }),
-      editable: true, sortable: false, disableColumnMenu: true, resizable: isEditMode,
+      editable: true, sortable: false, disableColumnMenu: true, resizable: isSettingsMode,
       renderHeader: () => <EditableHeader label={headers.note3_label} fieldKey='note3_label' hideFieldKey='hide_note3' />
     }] : []),
-    ...(!headers.hide_check1 || isEditMode ? [{
+    ...(!headers.hide_check1 || isSettingsMode ? [{
       field: 'check1', headerName: headers.check1_label, width: headers.check1_width ?? 80,
-      sortable: false, disableColumnMenu: true, resizable: isEditMode,
+      sortable: false, disableColumnMenu: true, resizable: isSettingsMode,
       renderHeader: () => <EditableHeader label={headers.check1_label} fieldKey='check1_label' hideFieldKey='hide_check1' />,
       renderCell: (p: any) => (
         <Box display='flex' justifyContent='center' alignItems='center' width='100%' height='100%'>
@@ -735,9 +735,9 @@ export default function App() {
         </Box>
       ),
     }] : []),
-    ...(!headers.hide_check2 || isEditMode ? [{
+    ...(!headers.hide_check2 || isSettingsMode ? [{
       field: 'check2', headerName: headers.check2_label, width: headers.check2_width ?? 80,
-      sortable: false, disableColumnMenu: true, resizable: isEditMode,
+      sortable: false, disableColumnMenu: true, resizable: isSettingsMode,
       renderHeader: () => <EditableHeader label={headers.check2_label} fieldKey='check2_label' hideFieldKey='hide_check2' />,
       renderCell: (p: any) => (
         <Box display='flex' justifyContent='center' alignItems='center' width='100%' height='100%'>
@@ -750,9 +750,9 @@ export default function App() {
         </Box>
       ),
     }] : []),
-    ...(!headers.hide_check3 || isEditMode ? [{
+    ...(!headers.hide_check3 || isSettingsMode ? [{
       field: 'check3', headerName: headers.check3_label, width: headers.check3_width ?? 80,
-      sortable: false, disableColumnMenu: true, resizable: isEditMode,
+      sortable: false, disableColumnMenu: true, resizable: isSettingsMode,
       renderHeader: () => <EditableHeader label={headers.check3_label} fieldKey='check3_label' hideFieldKey='hide_check3' />,
       renderCell: (p: any) => (
         <Box display='flex' justifyContent='center' alignItems='center' width='100%' height='100%'>
@@ -765,9 +765,9 @@ export default function App() {
         </Box>
       ),
     }] : []),
-    ...(!headers.hide_updated_at || isEditMode ? [{
+    ...(!headers.hide_updated_at || isSettingsMode ? [{
       field: 'updated_at', headerName: headers.updated_at_label, width: headers.updated_at_width ?? 100,
-      editable: false, sortable: false, disableColumnMenu: true, resizable: isEditMode,
+      editable: false, sortable: false, disableColumnMenu: true, resizable: isSettingsMode,
       renderHeader: () => <EditableHeader label={headers.updated_at_label} fieldKey='updated_at_label' hideFieldKey='hide_updated_at' />,
       renderCell: (p: any) => {
         if (!p.row.updated_at) return null;
@@ -783,7 +783,7 @@ export default function App() {
         );
       },
     }] : []),
-    ...(isEditMode ? [{
+    ...(isSettingsMode ? [{
       field: 'actions', headerName: 'Actions', width: 105, sortable: false, disableColumnMenu: true,
       renderCell: (p: any) => {
         const index = users.findIndex(u => u.id === p.row.id);
@@ -820,7 +820,7 @@ export default function App() {
                 labelId='db-select-label'
                 label='Select Dashboard'
                 value={dashboards.length > 0 ? dashboardId : ''}
-                disabled={isEditMode}
+                disabled={isSettingsMode}
                 onChange={(e) => {
                   const val = Number(e.target.value);
                   setLoading(true);
@@ -832,24 +832,24 @@ export default function App() {
               </Select>
             </FormControl>
 
-            <Tooltip title='Add Dashboard'>
-              <IconButton color='primary' onClick={() => setOpenAddDb(true)}><DashboardCustomizeIcon /></IconButton>
-            </Tooltip>
-
-            {isEditMode && dashboardId !== '' && (
-              <Tooltip title='Dashboard Settings'>
-                <IconButton color='secondary' onClick={() => {
-                  setEditDbName(currentDashboardName);
-                  setOpenDbSettings(true);
+            {isSettingsMode && dashboardId !== '' && (
+              <Tooltip title='Rename'>
+                <IconButton color='primary' onClick={() => {
+                  setRenameDbName(currentDashboardName);
+                  setOpenRenameDb(true);
                 }}>
-                  <SettingsIcon />
+                  <EditIcon />
                 </IconButton>
               </Tooltip>
             )}
+
+            <Tooltip title='Add Dashboard'>
+              <IconButton onClick={() => setOpenAddDb(true)}><DashboardCustomizeIcon /></IconButton>
+            </Tooltip>
           </Box>
 
           <Box display='flex' gap={1} alignItems='center'>
-            {isEditMode ? (
+            {isSettingsMode ? (
               <>
                 <Button
                   startIcon={<AddIcon />}
@@ -865,25 +865,21 @@ export default function App() {
                   variant='contained'
                   color='primary'
                   size="small"
-                  onClick={() => { setIsEditMode(false); setEditingHeader(null); }}
+                  onClick={() => { setIsSettingsMode(false); setEditingHeader(null); }}
                   sx={{ minWidth: '90px', fontSize: '1rem' }}
                 >
                   Done
                 </Button>
               </>
             ) : (
-              <Button
-                startIcon={<EditIcon />}
-                variant='outlined'
-                size="small"
-                onClick={() => {
-                  setIsEditMode(true);
-                  setEditWarningOpen(true);
-                }}
-                sx={{ minWidth: '90px', fontSize: '1rem' }}
-              >
-                Edit
-              </Button>
+              <Tooltip title='Settings'>
+                <IconButton onClick={() => {
+                  setIsSettingsMode(true);
+                  setSettingsWarningOpen(true);
+                }}>
+                  <SettingsIcon />
+                </IconButton>
+              </Tooltip>
             )}
           </Box>
         </Box>
@@ -891,15 +887,15 @@ export default function App() {
         {loading && dashboardId !== '' ? <Box flex={1} display='flex' justifyContent='center' alignItems='center'><CircularProgress /></Box> : (
           <Box display='flex' flex={1} overflow='hidden'>
             <Box id='left-panel' width={`${gridWidth}px`} display='flex' flexDirection='column' overflow='hidden'>
-              <Box height={`${gridHeight}px`} position='relative' sx={{ backgroundImage: isEditMode ? `radial-gradient(${theme.palette.divider} 1px, transparent 1px)` : 'none', backgroundSize: '20px 20px', overflow: 'auto', bgcolor: 'background.default' }}>
-                {seats.map(s => <SeatItem key={s.id} seat={s} onUpdate={updateSeat} users={users} isEditMode={isEditMode} onStatusClick={(u) => setPresenceTarget(u)} prefersDarkMode={prefersDarkMode} />)}
+              <Box height={`${gridHeight}px`} position='relative' sx={{ backgroundImage: isSettingsMode ? `radial-gradient(${theme.palette.divider} 1px, transparent 1px)` : 'none', backgroundSize: '20px 20px', overflow: 'auto', bgcolor: 'background.default' }}>
+                {seats.map(s => <SeatItem key={s.id} seat={s} onUpdate={updateSeat} users={users} isSettingsMode={isSettingsMode} onStatusClick={(u) => setPresenceTarget(u)} prefersDarkMode={prefersDarkMode} />)}
               </Box>
               <Box
                 sx={{
                   height: '5px',
-                  cursor: isEditMode ? 'row-resize' : 'default',
+                  cursor: isSettingsMode ? 'row-resize' : 'default',
                   bgcolor: isResizingHeight ? 'primary.main' : 'divider',
-                  '&:hover': isEditMode ? { bgcolor: 'primary.main' } : {},
+                  '&:hover': isSettingsMode ? { bgcolor: 'primary.main' } : {},
                   transition: 'background-color 0.2s'
                 }}
                 onMouseDown={handleHeightResizeStart}
@@ -921,9 +917,9 @@ export default function App() {
             <Box
               sx={{
                 width: '5px',
-                cursor: isEditMode ? 'col-resize' : 'default',
+                cursor: isSettingsMode ? 'col-resize' : 'default',
                 bgcolor: isResizingWidth ? 'primary.main' : 'divider',
-                '&:hover': isEditMode ? { bgcolor: 'primary.main' } : {},
+                '&:hover': isSettingsMode ? { bgcolor: 'primary.main' } : {},
                 transition: 'background-color 0.2s'
               }}
               onMouseDown={handleWidthResizeStart}
@@ -974,17 +970,17 @@ export default function App() {
           <DialogActions><Button onClick={() => setOpenAddDb(false)}>Cancel</Button><Button onClick={handleAddDashboard} variant='contained' disabled={!newDbName}>Create</Button></DialogActions>
         </Dialog>
 
-        {/* Edit Dashboard Settings Dialog */}
-        <Dialog open={openDbSettings} onClose={() => setOpenDbSettings(false)}>
-          <DialogTitle>Dashboard Settings</DialogTitle>
+        {/* Rename Dashboard Dialog */}
+        <Dialog open={openRenameDb} onClose={() => setOpenRenameDb(false)}>
+          <DialogTitle>Rename Dashboard</DialogTitle>
           <DialogContent>
             <Box pt={1}>
               <TextField
                 label='Dashboard Name'
                 fullWidth
                 autoFocus
-                value={editDbName}
-                onChange={e => setEditDbName(e.target.value)}
+                value={renameDbName}
+                onChange={e => setRenameDbName(e.target.value)}
               />
             </Box>
           </DialogContent>
@@ -997,26 +993,26 @@ export default function App() {
             >
               Delete
             </Button>
-            <Button onClick={() => setOpenDbSettings(false)}>Cancel</Button>
-            <Button onClick={handleUpdateDashboard} variant='contained' color='primary' disabled={!editDbName}>
+            <Button onClick={() => setOpenRenameDb(false)}>Cancel</Button>
+            <Button onClick={handleUpdateDashboard} variant='contained' color='primary' disabled={!renameDbName}>
               Save Changes
             </Button>
           </DialogActions>
         </Dialog>
 
-        {/* Edit Mode Warning Dialog */}
+        {/* Settings Mode Warning Dialog */}
         <Dialog
-          open={editWarningOpen}
-          onClose={() => setEditWarningOpen(false)}
+          open={settingsWarningOpen}
+          onClose={() => setSettingsWarningOpen(false)}
           maxWidth='sm'
           fullWidth
         >
           <DialogTitle sx={{ fontWeight: 'bold', color: 'warning.main' }}>
-            Edit Mode Activated
+            Settings Mode Activated
           </DialogTitle>
           <DialogContent>
             <Typography>
-              Changes made in edit mode will be reflected in real-time for all users viewing this dashboard.
+              Changes made in settings mode will be reflected in real-time for all users viewing this dashboard.
             </Typography>
             <Typography sx={{ mt: 2, fontWeight: 'bold', color: 'warning.main' }}>
               Warning: Changes will be immediately visible to everyone.
@@ -1024,7 +1020,7 @@ export default function App() {
           </DialogContent>
           <DialogActions>
             <Button
-              onClick={() => setEditWarningOpen(false)}
+              onClick={() => setSettingsWarningOpen(false)}
               variant='contained'
               color='primary'
               fullWidth
