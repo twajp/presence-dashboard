@@ -208,7 +208,7 @@ function SeatItem({ seat, onUpdate, users, isEditMode, onStatusClick, prefersDar
 
         {isEditMode && (
           <>
-            {/* 左上 */}
+            {/* Top Left */}
             <div
               onMouseDown={(e) => handleResizeStart(e, 'nw')}
               style={{
@@ -223,7 +223,7 @@ function SeatItem({ seat, onUpdate, users, isEditMode, onStatusClick, prefersDar
                 zIndex: 101
               }}
             />
-            {/* 右上 */}
+            {/* Top Right */}
             <div
               onMouseDown={(e) => handleResizeStart(e, 'ne')}
               style={{
@@ -238,7 +238,7 @@ function SeatItem({ seat, onUpdate, users, isEditMode, onStatusClick, prefersDar
                 zIndex: 101
               }}
             />
-            {/* 左下 */}
+            {/* Bottom Left */}
             <div
               onMouseDown={(e) => handleResizeStart(e, 'sw')}
               style={{
@@ -253,7 +253,7 @@ function SeatItem({ seat, onUpdate, users, isEditMode, onStatusClick, prefersDar
                 zIndex: 101
               }}
             />
-            {/* 右下 */}
+            {/* Bottom Right */}
             <div
               onMouseDown={(e) => handleResizeStart(e, 'se')}
               style={{
