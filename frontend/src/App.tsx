@@ -26,6 +26,7 @@ type User = {
   note1?: string; note2?: string; note3?: string;
   check1?: boolean; check2?: boolean; check3?: boolean;
   x: number; y: number;
+  width?: number; height?: number;
   team?: string; dashboard_id?: number; order: number;
   updated_at?: string;
 };
@@ -95,7 +96,7 @@ function SeatItem({ seat, onUpdate, users, isEditMode, onStatusClick, prefersDar
           onStatusClick(user);
         }}
         style={{
-          width: 80, height: 40, fontSize: '0.875rem',
+          width: user?.width || 80, height: user?.height || 40, fontSize: '0.875rem',
           display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
           backgroundColor: isEditMode ? (prefersDarkMode ? '#393939' : '#e0e0e0') : STATUS_CONFIG[seat.status].color,
           // color: isEditMode ? (prefersDarkMode ? '#757575' : '#bdbdbd') : '#fff',

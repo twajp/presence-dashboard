@@ -309,7 +309,7 @@ app.get('/health', async (req, res) => {
         // Create user
         app.post('/api/dashboards/:dashboardId/users', asyncHandler(async (req: express.Request, res: express.Response) => {
             const { dashboardId } = req.params;
-            const { team, name, presence, note1, note2, note3, check1, check2, check3, x, y, order } = req.body;
+            const { team, name, presence, note1, note2, note3, check1, check2, check3, x, y, width, height, order } = req.body;
 
             if (!dashboardId || isNaN(Number(dashboardId))) {
                 return sendError(res, 400, 'Invalid dashboard ID');
@@ -333,9 +333,9 @@ app.get('/health', async (req, res) => {
 
             const [result] = await connection.execute<ResultSetHeader>(
                 `INSERT INTO users 
-                (team, name, presence, dashboard_id, note1, note2, note3, check1, check2, check3, x, y, \`order\`) 
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-                [team, name.trim(), presence, dashboardId, note1, note2, note3, check1, check2, check3, x ?? 0, y ?? 0, order ?? 0]
+                (team, name, presence, dashboard_id, note1, note2, note3, check1, check2, check3, x, y, width, height, \`order\`) 
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+                [team, name.trim(), presence, dashboardId, note1, note2, note3, check1, check2, check3, x ?? 0, y ?? 0, width ?? 80, height ?? 40, order ?? 0]
             );
 
             sendSuccess(res, { id: result.insertId }, 201);
@@ -344,7 +344,7 @@ app.get('/health', async (req, res) => {
         // Update user
         app.put('/api/users/:userId', asyncHandler(async (req: express.Request, res: express.Response) => {
             const { userId } = req.params;
-            const { team, name, presence, note1, note2, note3, check1, check2, check3, x, y, order } = req.body;
+            const { team, name, presence, note1, note2, note3, check1, check2, check3, x, y, width, height, order } = req.body;
 
             if (!userId || isNaN(Number(userId))) {
                 return sendError(res, 400, 'Invalid user ID');
@@ -361,9 +361,9 @@ app.get('/health', async (req, res) => {
             const [result] = await connection.execute<ResultSetHeader>(
                 `UPDATE users SET 
                 team=?, name=?, presence=?, note1=?, note2=?, note3=?, 
-                check1=?, check2=?, check3=?, x=?, y=?, \`order\`=? 
+                check1=?, check2=?, check3=?, x=?, y=?, width=?, height=?, \`order\`=? 
                 WHERE id=?`,
-                [team, name?.trim(), presence, note1, note2, note3, check1, check2, check3, x, y, order, userId]
+                [team, name?.trim(), presence, note1, note2, note3, check1, check2, check3, x, y, width, height, order, userId]
             );
 
             if (result.affectedRows === 0) {
