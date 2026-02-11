@@ -206,6 +206,10 @@ app.get('/health', async (req, res) => {
                 hide_note1, hide_note2, hide_note3,
                 hide_check1, hide_check2, hide_check3,
                 hide_updated_at,
+                team_width, name_width, presence_width,
+                note1_width, note2_width, note3_width,
+                check1_width, check2_width, check3_width,
+                updated_at_width,
                 grid_width, grid_height, notes
             } = req.body;
 
@@ -240,6 +244,16 @@ app.get('/health', async (req, res) => {
                 hide_check2 ?? false,
                 hide_check3 ?? false,
                 hide_updated_at ?? false,
+                team_width ?? null,
+                name_width ?? null,
+                presence_width ?? null,
+                note1_width ?? null,
+                note2_width ?? null,
+                note3_width ?? null,
+                check1_width ?? null,
+                check2_width ?? null,
+                check3_width ?? null,
+                updated_at_width ?? null,
                 grid_width ?? null,
                 grid_height ?? null,
                 notes ?? null
@@ -250,8 +264,10 @@ app.get('/health', async (req, res) => {
                 (id, team_label, name_label, presence_label, note1_label, note2_label, note3_label, 
                 check1_label, check2_label, check3_label, updated_at_label, 
                 hide_note1, hide_note2, hide_note3, hide_check1, hide_check2, hide_check3, hide_updated_at, 
+                team_width, name_width, presence_width, note1_width, note2_width, note3_width, 
+                check1_width, check2_width, check3_width, updated_at_width, 
                 grid_width, grid_height, notes) 
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) 
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) 
                 ON DUPLICATE KEY UPDATE 
                 team_label=?, name_label=?, presence_label=?, 
                 note1_label=?, note2_label=?, note3_label=?, 
@@ -259,6 +275,10 @@ app.get('/health', async (req, res) => {
                 updated_at_label=?, 
                 hide_note1=?, hide_note2=?, hide_note3=?, 
                 hide_check1=?, hide_check2=?, hide_check3=?, hide_updated_at=?, 
+                team_width=?, name_width=?, presence_width=?, 
+                note1_width=?, note2_width=?, note3_width=?, 
+                check1_width=?, check2_width=?, check3_width=?, 
+                updated_at_width=?, 
                 grid_width=?, grid_height=?, notes=?`,
                 [...values, ...values.slice(1)]
             );
