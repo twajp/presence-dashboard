@@ -38,6 +38,8 @@ CREATE TABLE IF NOT EXISTS users (
     dashboard_id INT,
     x INT,
     y INT,
+    width INT DEFAULT 80,
+    height INT DEFAULT 40,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
 
