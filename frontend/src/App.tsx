@@ -345,6 +345,16 @@ export default function App() {
         hide_check2: data.hide_check2 ?? DEFAULT_DASHBOARD_SETTINGS.hide_check2,
         hide_check3: data.hide_check3 ?? DEFAULT_DASHBOARD_SETTINGS.hide_check3,
         hide_updated_at: data.hide_updated_at ?? DEFAULT_DASHBOARD_SETTINGS.hide_updated_at,
+        team_width: data.team_width ?? DEFAULT_DASHBOARD_SETTINGS.team_width,
+        name_width: data.name_width ?? DEFAULT_DASHBOARD_SETTINGS.name_width,
+        presence_width: data.presence_width ?? DEFAULT_DASHBOARD_SETTINGS.presence_width,
+        note1_width: data.note1_width ?? DEFAULT_DASHBOARD_SETTINGS.note1_width,
+        note2_width: data.note2_width ?? DEFAULT_DASHBOARD_SETTINGS.note2_width,
+        note3_width: data.note3_width ?? DEFAULT_DASHBOARD_SETTINGS.note3_width,
+        check1_width: data.check1_width ?? DEFAULT_DASHBOARD_SETTINGS.check1_width,
+        check2_width: data.check2_width ?? DEFAULT_DASHBOARD_SETTINGS.check2_width,
+        check3_width: data.check3_width ?? DEFAULT_DASHBOARD_SETTINGS.check3_width,
+        updated_at_width: data.updated_at_width ?? DEFAULT_DASHBOARD_SETTINGS.updated_at_width,
         grid_width: data.grid_width ?? DEFAULT_DASHBOARD_SETTINGS.grid_width,
         grid_height: data.grid_height ?? DEFAULT_DASHBOARD_SETTINGS.grid_height,
         notes: data.notes || DEFAULT_DASHBOARD_SETTINGS.notes
@@ -496,6 +506,35 @@ export default function App() {
     });
   };
 
+  const handleColumnWidthChange = useCallback(async (params: { colDef: { field: string; width?: number }; width: number }) => {
+    const field = params.colDef.field;
+    const width = params.width;
+    const widthFieldMap: Record<string, keyof typeof headers> = {
+      'team': 'team_width',
+      'name': 'name_width',
+      'presence': 'presence_width',
+      'note1': 'note1_width',
+      'note2': 'note2_width',
+      'note3': 'note3_width',
+      'check1': 'check1_width',
+      'check2': 'check2_width',
+      'check3': 'check3_width',
+      'updated_at': 'updated_at_width'
+    };
+
+    const widthField = widthFieldMap[field];
+    if (!widthField || dashboardId === '') return;
+
+    const newHeaders = { ...headers, [widthField]: width };
+    setHeaders(newHeaders);
+
+    await fetch(`${API_BASE_URL}/api/dashboards/${dashboardId}/settings`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(newHeaders),
+    });
+  }, [dashboardId, headers]);
+
   useEffect(() => {
     if (isResizingWidth || isResizingHeight) {
       document.addEventListener('mousemove', handleMouseMove);
@@ -633,17 +672,17 @@ export default function App() {
 
   const columns: GridColDef[] = [
     {
-      field: 'team', headerName: headers.team_label, width: 120,
-      editable: isEditMode, sortable: false, disableColumnMenu: true,
+      field: 'team', headerName: headers.team_label, width: headers.team_width ?? 120,
+      editable: isEditMode, sortable: false, disableColumnMenu: true, resizable: isEditMode,
       renderHeader: () => <EditableHeader label={headers.team_label} fieldKey='team_label' />
     },
     {
-      field: 'name', headerName: headers.name_label, width: 100,
-      editable: isEditMode, sortable: false, disableColumnMenu: true,
+      field: 'name', headerName: headers.name_label, width: headers.name_width ?? 100,
+      editable: isEditMode, sortable: false, disableColumnMenu: true, resizable: isEditMode,
       renderHeader: () => <EditableHeader label={headers.name_label} fieldKey='name_label' />
     },
     {
-      field: 'presence', headerName: headers.presence_label, width: 100, sortable: false, disableColumnMenu: true,
+      field: 'presence', headerName: headers.presence_label, width: headers.presence_width ?? 100, sortable: false, disableColumnMenu: true, resizable: isEditMode,
       renderHeader: () => <EditableHeader label={headers.presence_label} fieldKey='presence_label' />,
       renderCell: (p) => (
         <Button size='small' variant='contained' disabled={isEditMode}
@@ -659,23 +698,29 @@ export default function App() {
       ),
     },
     ...(!headers.hide_note1 || isEditMode ? [{
-      field: 'note1', headerName: headers.note1_label, flex: 1,
-      editable: true, sortable: false, disableColumnMenu: true,
+      field: 'note1',
+      headerName: headers.note1_label,
+      ...(headers.note1_width ? { flex: headers.note1_width } : { flex: 1 }),
+      editable: true, sortable: false, disableColumnMenu: true, resizable: isEditMode,
       renderHeader: () => <EditableHeader label={headers.note1_label} fieldKey='note1_label' hideFieldKey='hide_note1' />
     }] : []),
     ...(!headers.hide_note2 || isEditMode ? [{
-      field: 'note2', headerName: headers.note2_label, flex: 1,
-      editable: true, sortable: false, disableColumnMenu: true,
+      field: 'note2',
+      headerName: headers.note2_label,
+      ...(headers.note2_width ? { flex: headers.note2_width } : { flex: 1 }),
+      editable: true, sortable: false, disableColumnMenu: true, resizable: isEditMode,
       renderHeader: () => <EditableHeader label={headers.note2_label} fieldKey='note2_label' hideFieldKey='hide_note2' />
     }] : []),
     ...(!headers.hide_note3 || isEditMode ? [{
-      field: 'note3', headerName: headers.note3_label, flex: 1,
-      editable: true, sortable: false, disableColumnMenu: true,
+      field: 'note3',
+      headerName: headers.note3_label,
+      ...(headers.note3_width ? { flex: headers.note3_width } : { flex: 1 }),
+      editable: true, sortable: false, disableColumnMenu: true, resizable: isEditMode,
       renderHeader: () => <EditableHeader label={headers.note3_label} fieldKey='note3_label' hideFieldKey='hide_note3' />
     }] : []),
     ...(!headers.hide_check1 || isEditMode ? [{
-      field: 'check1', headerName: headers.check1_label, width: 80,
-      sortable: false, disableColumnMenu: true,
+      field: 'check1', headerName: headers.check1_label, width: headers.check1_width ?? 80,
+      sortable: false, disableColumnMenu: true, resizable: isEditMode,
       renderHeader: () => <EditableHeader label={headers.check1_label} fieldKey='check1_label' hideFieldKey='hide_check1' />,
       renderCell: (p: any) => (
         <Box display='flex' justifyContent='center' alignItems='center' width='100%' height='100%'>
@@ -689,8 +734,8 @@ export default function App() {
       ),
     }] : []),
     ...(!headers.hide_check2 || isEditMode ? [{
-      field: 'check2', headerName: headers.check2_label, width: 80,
-      sortable: false, disableColumnMenu: true,
+      field: 'check2', headerName: headers.check2_label, width: headers.check2_width ?? 80,
+      sortable: false, disableColumnMenu: true, resizable: isEditMode,
       renderHeader: () => <EditableHeader label={headers.check2_label} fieldKey='check2_label' hideFieldKey='hide_check2' />,
       renderCell: (p: any) => (
         <Box display='flex' justifyContent='center' alignItems='center' width='100%' height='100%'>
@@ -704,8 +749,8 @@ export default function App() {
       ),
     }] : []),
     ...(!headers.hide_check3 || isEditMode ? [{
-      field: 'check3', headerName: headers.check3_label, width: 80,
-      sortable: false, disableColumnMenu: true,
+      field: 'check3', headerName: headers.check3_label, width: headers.check3_width ?? 80,
+      sortable: false, disableColumnMenu: true, resizable: isEditMode,
       renderHeader: () => <EditableHeader label={headers.check3_label} fieldKey='check3_label' hideFieldKey='hide_check3' />,
       renderCell: (p: any) => (
         <Box display='flex' justifyContent='center' alignItems='center' width='100%' height='100%'>
@@ -719,8 +764,8 @@ export default function App() {
       ),
     }] : []),
     ...(!headers.hide_updated_at || isEditMode ? [{
-      field: 'updated_at', headerName: headers.updated_at_label, width: 100,
-      editable: false, sortable: false, disableColumnMenu: true,
+      field: 'updated_at', headerName: headers.updated_at_label, width: headers.updated_at_width ?? 100,
+      editable: false, sortable: false, disableColumnMenu: true, resizable: isEditMode,
       renderHeader: () => <EditableHeader label={headers.updated_at_label} fieldKey='updated_at_label' hideFieldKey='hide_updated_at' />,
       renderCell: (p: any) => {
         if (!p.row.updated_at) return null;
@@ -888,6 +933,7 @@ export default function App() {
                   await updateSeat(n.id, { team: n.team, name: n.name, note1: n.note1, note2: n.note2, note3: n.note3 });
                   return n;
                 }}
+                onColumnWidthChange={handleColumnWidthChange}
                 hideFooter
                 sx={{ border: 'none' }}
               />
