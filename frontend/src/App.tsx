@@ -77,14 +77,91 @@ function SeatItem({ seat, onUpdate, users, isEditMode, onStatusClick, prefersDar
 }) {
   const draggedRef = useRef(false);
   const nodeRef = useRef<HTMLDivElement>(null);
+  const [isResizing, setIsResizing] = useState(false);
+  const [resizeStart, setResizeStart] = useState({ x: 0, y: 0, width: 0, height: 0, corner: '', startX: 0, startY: 0 });
   const user = users.find((u) => u.id === seat.userId);
+
+  const width = user?.width || 80;
+  const height = user?.height || 40;
+  const isVertical = height > width;
+
+  const handleResizeStart = useCallback((e: React.MouseEvent, corner: string) => {
+    if (!isEditMode) return;
+    e.stopPropagation();
+    e.preventDefault();
+    setIsResizing(true);
+    setResizeStart({
+      x: e.clientX,
+      y: e.clientY,
+      width: width,
+      height: height,
+      corner: corner,
+      startX: seat.x,
+      startY: seat.y
+    });
+  }, [isEditMode, width, height, seat.x, seat.y]);
+
+  useEffect(() => {
+    if (!isResizing) return;
+
+    const handleMouseMove = (e: MouseEvent) => {
+      const deltaX = e.clientX - resizeStart.x;
+      const deltaY = e.clientY - resizeStart.y;
+
+      let newWidth = resizeStart.width;
+      let newHeight = resizeStart.height;
+      let newX = resizeStart.startX;
+      let newY = resizeStart.startY;
+
+      if (resizeStart.corner.includes('e')) {
+        newWidth = Math.max(40, Math.round((resizeStart.width + deltaX) / 8) * 8);
+      } else if (resizeStart.corner.includes('w')) {
+        newWidth = Math.max(40, Math.round((resizeStart.width - deltaX) / 8) * 8);
+        newX = resizeStart.startX + (resizeStart.width - newWidth);
+      }
+
+      if (resizeStart.corner.includes('s')) {
+        newHeight = Math.max(40, Math.round((resizeStart.height + deltaY) / 8) * 8);
+      } else if (resizeStart.corner.includes('n')) {
+        newHeight = Math.max(40, Math.round((resizeStart.height - deltaY) / 8) * 8);
+        newY = resizeStart.startY + (resizeStart.height - newHeight);
+      }
+
+      if (nodeRef.current) {
+        nodeRef.current.style.width = `${newWidth}px`;
+        nodeRef.current.style.height = `${newHeight}px`;
+        nodeRef.current.style.transform = `translate(${newX}px, ${newY}px)`;
+      }
+    };
+
+    const handleMouseUp = () => {
+      setIsResizing(false);
+      if (nodeRef.current && user) {
+        const finalWidth = parseInt(nodeRef.current.style.width);
+        const finalHeight = parseInt(nodeRef.current.style.height);
+        const transform = nodeRef.current.style.transform;
+        const match = transform.match(/translate\((-?\d+)px, (-?\d+)px\)/);
+        const finalX = match ? parseInt(match[1]) : seat.x;
+        const finalY = match ? parseInt(match[2]) : seat.y;
+        onUpdate(seat.id, { width: finalWidth, height: finalHeight, x: finalX, y: finalY });
+      }
+    };
+
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', handleMouseUp);
+
+    return () => {
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, [isResizing, resizeStart, onUpdate, seat.id, seat.x, seat.y, user]);
 
   return (
     <Draggable
       nodeRef={nodeRef}
       position={{ x: seat.x, y: seat.y }}
       grid={[8, 8]}
-      disabled={!isEditMode}
+      disabled={!isEditMode || isResizing}
       onStart={() => { draggedRef.current = false; }}
       onDrag={() => { draggedRef.current = true; }}
       onStop={(_e, data) => { onUpdate(seat.id, { x: data.x, y: data.y }); }}
@@ -96,17 +173,103 @@ function SeatItem({ seat, onUpdate, users, isEditMode, onStatusClick, prefersDar
           onStatusClick(user);
         }}
         style={{
-          width: user?.width || 80, height: user?.height || 40, fontSize: '0.875rem',
-          display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+          width: width,
+          height: height,
+          fontSize: '0.875rem',
+          display: 'flex',
+          flexDirection: isVertical ? 'column' : 'row',
+          alignItems: 'center',
+          justifyContent: 'center',
           backgroundColor: isEditMode ? (prefersDarkMode ? '#393939' : '#e0e0e0') : STATUS_CONFIG[seat.status].color,
-          // color: isEditMode ? (prefersDarkMode ? '#757575' : '#bdbdbd') : '#fff',
           color: isEditMode ? (prefersDarkMode ? '#fff' : '#000') : '#fff',
           outline: isEditMode ? (prefersDarkMode ? '2px solid #757575' : '2px solid #bdbdbd') : 'none',
-          cursor: isEditMode ? 'move' : 'pointer', userSelect: 'none', position: 'absolute',
-          boxShadow: '0 2px 6px rgba(0,0,0,0.3)', borderRadius: '4px', zIndex: isEditMode ? 100 : 1
+          cursor: isEditMode ? 'move' : 'pointer',
+          userSelect: 'none',
+          position: 'absolute',
+          boxShadow: '0 2px 6px rgba(0,0,0,0.3)',
+          borderRadius: '4px',
+          zIndex: isEditMode ? 100 : 1,
+          // padding: '4px',
+          overflow: 'hidden',
+          textAlign: 'center',
+          wordBreak: 'break-word',
+          lineHeight: 1.2
         }}
       >
-        {user && <div >{user.name}</div>}
+        {user && <div style={{
+          maxWidth: '100%',
+          maxHeight: '100%',
+          overflow: 'hidden',
+          textOverflow: 'ellipsis',
+          display: '-webkit-box',
+          WebkitLineClamp: isVertical ? 3 : 2,
+          WebkitBoxOrient: 'vertical'
+        }}>{user.name}</div>}
+
+        {isEditMode && (
+          <>
+            {/* 左上 */}
+            <div
+              onMouseDown={(e) => handleResizeStart(e, 'nw')}
+              style={{
+                position: 'absolute',
+                left: 0,
+                top: 0,
+                width: '8px',
+                height: '8px',
+                cursor: 'nwse-resize',
+                backgroundColor: prefersDarkMode ? '#757575' : '#bdbdbd',
+                borderRadius: '4px 0 0 0',
+                zIndex: 101
+              }}
+            />
+            {/* 右上 */}
+            <div
+              onMouseDown={(e) => handleResizeStart(e, 'ne')}
+              style={{
+                position: 'absolute',
+                right: 0,
+                top: 0,
+                width: '8px',
+                height: '8px',
+                cursor: 'nesw-resize',
+                backgroundColor: prefersDarkMode ? '#757575' : '#bdbdbd',
+                borderRadius: '0 4px 0 0',
+                zIndex: 101
+              }}
+            />
+            {/* 左下 */}
+            <div
+              onMouseDown={(e) => handleResizeStart(e, 'sw')}
+              style={{
+                position: 'absolute',
+                left: 0,
+                bottom: 0,
+                width: '8px',
+                height: '8px',
+                cursor: 'nesw-resize',
+                backgroundColor: prefersDarkMode ? '#757575' : '#bdbdbd',
+                borderRadius: '0 0 0 4px',
+                zIndex: 101
+              }}
+            />
+            {/* 右下 */}
+            <div
+              onMouseDown={(e) => handleResizeStart(e, 'se')}
+              style={{
+                position: 'absolute',
+                right: 0,
+                bottom: 0,
+                width: '8px',
+                height: '8px',
+                cursor: 'nwse-resize',
+                backgroundColor: prefersDarkMode ? '#757575' : '#bdbdbd',
+                borderRadius: '0 0 4px 0',
+                zIndex: 101
+              }}
+            />
+          </>
+        )}
       </div>
     </Draggable>
   );
