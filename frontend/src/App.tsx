@@ -192,7 +192,8 @@ function SeatItem({ seat, onUpdate, users, isEditMode, onStatusClick, prefersDar
           // padding: '4px',
           overflow: 'hidden',
           textAlign: 'center',
-          wordBreak: 'break-word',
+          wordBreak: 'keep-all',
+          overflowWrap: 'break-word',
           lineHeight: 1.2
         }}
       >
@@ -700,21 +701,21 @@ export default function App() {
     ...(!headers.hide_note1 || isEditMode ? [{
       field: 'note1',
       headerName: headers.note1_label,
-      ...(headers.note1_width ? { flex: headers.note1_width } : { flex: 1 }),
+      ...(headers.note1_width ? { flex: headers.note1_width } : { flex: 100 }),
       editable: true, sortable: false, disableColumnMenu: true, resizable: isEditMode,
       renderHeader: () => <EditableHeader label={headers.note1_label} fieldKey='note1_label' hideFieldKey='hide_note1' />
     }] : []),
     ...(!headers.hide_note2 || isEditMode ? [{
       field: 'note2',
       headerName: headers.note2_label,
-      ...(headers.note2_width ? { flex: headers.note2_width } : { flex: 1 }),
+      ...(headers.note2_width ? { flex: headers.note2_width } : { flex: 100 }),
       editable: true, sortable: false, disableColumnMenu: true, resizable: isEditMode,
       renderHeader: () => <EditableHeader label={headers.note2_label} fieldKey='note2_label' hideFieldKey='hide_note2' />
     }] : []),
     ...(!headers.hide_note3 || isEditMode ? [{
       field: 'note3',
       headerName: headers.note3_label,
-      ...(headers.note3_width ? { flex: headers.note3_width } : { flex: 1 }),
+      ...(headers.note3_width ? { flex: headers.note3_width } : { flex: 100 }),
       editable: true, sortable: false, disableColumnMenu: true, resizable: isEditMode,
       renderHeader: () => <EditableHeader label={headers.note3_label} fieldKey='note3_label' hideFieldKey='hide_note3' />
     }] : []),
