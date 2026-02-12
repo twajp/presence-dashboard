@@ -1,6 +1,6 @@
 import { useRef, useState, useEffect, useCallback, useMemo } from 'react';
 import Draggable from 'react-draggable';
-import { DataGrid, type GridColDef } from '@mui/x-data-grid';
+import { DataGrid, type GridColDef, type GridSortModel } from '@mui/x-data-grid';
 import {
   Button, CircularProgress, Box, ThemeProvider, createTheme, CssBaseline,
   useMediaQuery, Select, MenuItem, FormControl, InputLabel, Typography,
@@ -373,6 +373,7 @@ export default function App() {
   const [newUser, setNewUser] = useState({ name: '', team: '' });
   const [newDbName, setNewDbName] = useState('');
   const [renameDbName, setRenameDbName] = useState('');
+  const [sortModel, setSortModel] = useState<GridSortModel>([]);
 
   const fetchDashboards = useCallback(async () => {
     try {
@@ -766,16 +767,16 @@ export default function App() {
   const columns: GridColDef[] = [
     {
       field: 'team', headerName: headers.team_label, width: headers.team_width ?? 120,
-      editable: isSettingsMode, sortable: false, disableColumnMenu: true, resizable: isSettingsMode,
+      editable: isSettingsMode, sortable: !isSettingsMode, disableColumnMenu: true, resizable: isSettingsMode,
       renderHeader: () => <EditableHeader label={headers.team_label} fieldKey='team_label' isEditable={isSettingsMode} />
     },
     {
       field: 'name', headerName: headers.name_label, width: headers.name_width ?? 100,
-      editable: isSettingsMode, sortable: false, disableColumnMenu: true, resizable: isSettingsMode,
+      editable: isSettingsMode, sortable: !isSettingsMode, disableColumnMenu: true, resizable: isSettingsMode,
       renderHeader: () => <EditableHeader label={headers.name_label} fieldKey='name_label' isEditable={isSettingsMode} />
     },
     {
-      field: 'presence', headerName: headers.presence_label, width: headers.presence_width ?? 100, sortable: false, disableColumnMenu: true, resizable: isSettingsMode,
+      field: 'presence', headerName: headers.presence_label, width: headers.presence_width ?? 100, sortable: !isSettingsMode, disableColumnMenu: true, resizable: isSettingsMode,
       renderHeader: () => <EditableHeader label={headers.presence_label} fieldKey='presence_label' />,
       renderCell: (p) => (
         <Button size='small' variant='contained' disabled={isSettingsMode}
@@ -794,26 +795,26 @@ export default function App() {
       field: 'note1',
       headerName: headers.note1_label,
       ...(headers.note1_width ? { flex: headers.note1_width } : { flex: 100 }),
-      editable: true, sortable: false, disableColumnMenu: true, resizable: isSettingsMode,
+      editable: true, sortable: !isSettingsMode, disableColumnMenu: true, resizable: isSettingsMode,
       renderHeader: () => <EditableHeader label={headers.note1_label} fieldKey='note1_label' hideFieldKey='hide_note1' />
     }] : []),
     ...(!headers.hide_note2 || isSettingsMode ? [{
       field: 'note2',
       headerName: headers.note2_label,
       ...(headers.note2_width ? { flex: headers.note2_width } : { flex: 100 }),
-      editable: true, sortable: false, disableColumnMenu: true, resizable: isSettingsMode,
+      editable: true, sortable: !isSettingsMode, disableColumnMenu: true, resizable: isSettingsMode,
       renderHeader: () => <EditableHeader label={headers.note2_label} fieldKey='note2_label' hideFieldKey='hide_note2' />
     }] : []),
     ...(!headers.hide_note3 || isSettingsMode ? [{
       field: 'note3',
       headerName: headers.note3_label,
       ...(headers.note3_width ? { flex: headers.note3_width } : { flex: 100 }),
-      editable: true, sortable: false, disableColumnMenu: true, resizable: isSettingsMode,
+      editable: true, sortable: !isSettingsMode, disableColumnMenu: true, resizable: isSettingsMode,
       renderHeader: () => <EditableHeader label={headers.note3_label} fieldKey='note3_label' hideFieldKey='hide_note3' />
     }] : []),
     ...(!headers.hide_check1 || isSettingsMode ? [{
       field: 'check1', headerName: headers.check1_label, width: headers.check1_width ?? 80,
-      sortable: false, disableColumnMenu: true, resizable: isSettingsMode,
+      sortable: !isSettingsMode, disableColumnMenu: true, resizable: isSettingsMode,
       renderHeader: () => <EditableHeader label={headers.check1_label} fieldKey='check1_label' hideFieldKey='hide_check1' />,
       renderCell: (p: any) => (
         <Box display='flex' justifyContent='center' alignItems='center' width='100%' height='100%'>
@@ -828,7 +829,7 @@ export default function App() {
     }] : []),
     ...(!headers.hide_check2 || isSettingsMode ? [{
       field: 'check2', headerName: headers.check2_label, width: headers.check2_width ?? 80,
-      sortable: false, disableColumnMenu: true, resizable: isSettingsMode,
+      sortable: !isSettingsMode, disableColumnMenu: true, resizable: isSettingsMode,
       renderHeader: () => <EditableHeader label={headers.check2_label} fieldKey='check2_label' hideFieldKey='hide_check2' />,
       renderCell: (p: any) => (
         <Box display='flex' justifyContent='center' alignItems='center' width='100%' height='100%'>
@@ -843,7 +844,7 @@ export default function App() {
     }] : []),
     ...(!headers.hide_check3 || isSettingsMode ? [{
       field: 'check3', headerName: headers.check3_label, width: headers.check3_width ?? 80,
-      sortable: false, disableColumnMenu: true, resizable: isSettingsMode,
+      sortable: !isSettingsMode, disableColumnMenu: true, resizable: isSettingsMode,
       renderHeader: () => <EditableHeader label={headers.check3_label} fieldKey='check3_label' hideFieldKey='hide_check3' />,
       renderCell: (p: any) => (
         <Box display='flex' justifyContent='center' alignItems='center' width='100%' height='100%'>
@@ -858,7 +859,7 @@ export default function App() {
     }] : []),
     ...(!headers.hide_updated_at || isSettingsMode ? [{
       field: 'updated_at', headerName: headers.updated_at_label, width: headers.updated_at_width ?? 100,
-      editable: false, sortable: false, disableColumnMenu: true, resizable: isSettingsMode,
+      editable: false, sortable: !isSettingsMode, disableColumnMenu: true, resizable: isSettingsMode,
       renderHeader: () => <EditableHeader label={headers.updated_at_label} fieldKey='updated_at_label' hideFieldKey='hide_updated_at' />,
       renderCell: (p: any) => {
         if (!p.row.updated_at) return null;
@@ -976,6 +977,7 @@ export default function App() {
             ) : (
               <Tooltip title='Settings'>
                 <IconButton onClick={() => {
+                  setSortModel([]);
                   setIsSettingsMode(true);
                   setSettingsWarningOpen(true);
                 }}>
@@ -1036,6 +1038,8 @@ export default function App() {
                 columns={columns}
                 columnHeaderHeight={28}
                 rowHeight={28}
+                sortModel={sortModel}
+                onSortModelChange={(model) => setSortModel(model)}
                 processRowUpdate={async (n) => {
                   await updateSeat(n.id, { team: n.team, name: n.name, note1: n.note1, note2: n.note2, note3: n.note3 });
                   return n;
