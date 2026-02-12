@@ -531,9 +531,11 @@ export default function App() {
       const leftPanel = document.getElementById('left-panel');
       if (leftPanel) {
         const rect = leftPanel.getBoundingClientRect();
-        const newHeight = Math.round((e.clientY - rect.top) / 8) * 8;
-        if (newHeight > 200 && newHeight < rect.height - 100) {
-          const gridArea = leftPanel.children[0] as HTMLElement;
+        const legendBar = leftPanel.children[0] as HTMLElement;
+        const legendBarHeight = legendBar ? legendBar.offsetHeight : 0;
+        const newHeight = Math.round((e.clientY - rect.top - legendBarHeight) / 8) * 8;
+        if (newHeight > 200 && newHeight < rect.height - legendBarHeight - 100) {
+          const gridArea = leftPanel.children[1] as HTMLElement;
           if (gridArea) {
             gridArea.style.height = `${newHeight}px`;
           }
@@ -554,7 +556,7 @@ export default function App() {
     } else if (isResizingHeight) {
       const leftPanel = document.getElementById('left-panel');
       if (leftPanel) {
-        const gridArea = leftPanel.children[0] as HTMLElement;
+        const gridArea = leftPanel.children[1] as HTMLElement;
         if (gridArea) {
           const finalHeight = parseInt(gridArea.style.height);
           setGridHeight(finalHeight);
