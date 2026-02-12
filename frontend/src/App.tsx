@@ -1046,7 +1046,21 @@ export default function App() {
                 }}
                 onColumnWidthChange={handleColumnWidthChange}
                 hideFooter
-                sx={{ border: 'none' }}
+                sx={{
+                  border: 'none',
+                  '& .MuiDataGrid-columnHeader': {
+                    backgroundColor: prefersDarkMode ? '#424242' : '#e0e0e0',
+                  },
+                  '& .MuiDataGrid-row:nth-of-type(odd)': {
+                    backgroundColor: prefersDarkMode ? 'rgba(255, 255, 255, 0.02)' : 'rgba(0, 0, 0, 0.02)'
+                  },
+                  '& .MuiDataGrid-row:nth-of-type(even)': {
+                    backgroundColor: prefersDarkMode ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.05)'
+                  },
+                  '& .MuiDataGrid-row:hover': {
+                    backgroundColor: prefersDarkMode ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.08)'
+                  }
+                }}
               />
             </Box>
           </Box>
