@@ -699,9 +699,9 @@ export default function App() {
     }
   };
 
-  const EditableHeader = ({ label, fieldKey, hideFieldKey }: { label: string, fieldKey: keyof typeof headers, hideFieldKey?: keyof typeof headers }) => {
+  const EditableHeader = ({ label, fieldKey, hideFieldKey, isEditable = true }: { label: string, fieldKey: keyof typeof headers, hideFieldKey?: keyof typeof headers, isEditable?: boolean }) => {
     const [tempValue, setTempValue] = useState(label);
-    if (isSettingsMode && editingHeader === fieldKey) {
+    if (isEditable && isSettingsMode && editingHeader === fieldKey) {
       return (
         <TextField
           variant='standard'
@@ -726,11 +726,11 @@ export default function App() {
     }
     return (
       <Box
-        sx={{ cursor: isSettingsMode ? 'pointer' : 'inherit', width: '100%', display: 'flex', alignItems: 'center', gap: 0.5 }}
-        onClick={() => isSettingsMode && setEditingHeader(fieldKey)}
+        sx={{ cursor: isEditable && isSettingsMode ? 'pointer' : 'inherit', width: '100%', display: 'flex', alignItems: 'center', gap: 0.5 }}
+        onClick={() => isEditable && isSettingsMode && setEditingHeader(fieldKey)}
       >
         {label}
-        {isSettingsMode && hideFieldKey && (
+        {isEditable && isSettingsMode && hideFieldKey && (
           <input
             type='checkbox'
             checked={!headers[hideFieldKey]}
@@ -753,12 +753,12 @@ export default function App() {
     {
       field: 'team', headerName: headers.team_label, width: headers.team_width ?? 120,
       editable: isSettingsMode, sortable: false, disableColumnMenu: true, resizable: isSettingsMode,
-      renderHeader: () => <EditableHeader label={headers.team_label} fieldKey='team_label' />
+      renderHeader: () => <EditableHeader label={headers.team_label} fieldKey='team_label' isEditable={isSettingsMode} />
     },
     {
       field: 'name', headerName: headers.name_label, width: headers.name_width ?? 100,
       editable: isSettingsMode, sortable: false, disableColumnMenu: true, resizable: isSettingsMode,
-      renderHeader: () => <EditableHeader label={headers.name_label} fieldKey='name_label' />
+      renderHeader: () => <EditableHeader label={headers.name_label} fieldKey='name_label' isEditable={isSettingsMode} />
     },
     {
       field: 'presence', headerName: headers.presence_label, width: headers.presence_width ?? 100, sortable: false, disableColumnMenu: true, resizable: isSettingsMode,
@@ -862,6 +862,7 @@ export default function App() {
     }] : []),
     ...(isSettingsMode ? [{
       field: 'actions', headerName: 'Actions', width: 105, sortable: false, disableColumnMenu: true,
+      renderHeader: () => <EditableHeader label={'Actions'} fieldKey={'actions' as any} isEditable={false} />,
       renderCell: (p: any) => {
         const index = users.findIndex(u => u.id === p.row.id);
         return (
@@ -888,7 +889,7 @@ export default function App() {
       <CssBaseline />
       <Box display='flex' flexDirection='column' width='100vw' height='100vh'>
         <Box px={3} py={1} display='flex' alignItems='center' bgcolor='background.paper' borderBottom={1} borderColor='divider' sx={{ height: '64px' }}>
-          <Typography variant='h6' fontWeight='bold' sx={{ display: { xs: 'none', md: 'block' } }}>Presence Dashboard</Typography>
+          <Typography variant='h6' fontSize='1.5rem' fontWeight='bold' sx={{ display: { xs: 'none', md: 'block' } }}>Presence Dashboard</Typography>
 
           <Box sx={{ flex: 1, display: 'flex', justifyContent: 'center', gap: 1, alignItems: 'center' }}>
             <FormControl size='small' sx={{ minWidth: 200 }}>
