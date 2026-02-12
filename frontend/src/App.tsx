@@ -362,6 +362,8 @@ export default function App() {
   const [presenceTarget, setPresenceTarget] = useState<User | null>(null);
   const [bulkConfirmOpen, setBulkConfirmOpen] = useState(false);
   const [bulkConfirmStatus, setBulkConfirmStatus] = useState<PresenceStatus | null>(null);
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<{ type: 'member' | 'dashboard'; id?: number; name?: string } | null>(null);
   const [isResizingWidth, setIsResizingWidth] = useState(false);
   const [gridWidth, setGridWidth] = useState(DEFAULT_DASHBOARD_SETTINGS.grid_width);
   const [isResizingHeight, setIsResizingHeight] = useState(false);
@@ -653,9 +655,31 @@ export default function App() {
   };
 
   const handleDeleteMember = async (id: number) => {
-    if (!window.confirm('Are you sure?')) return;
-    await fetch(`${API_BASE_URL}/api/users/${id}`, { method: 'DELETE' });
-    fetchUsers();
+    const user = users.find(u => u.id === id);
+    setDeleteTarget({ type: 'member', id, name: user?.name });
+    setDeleteConfirmOpen(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!deleteTarget) return;
+
+    if (deleteTarget.type === 'member' && deleteTarget.id) {
+      await fetch(`${API_BASE_URL}/api/users/${deleteTarget.id}`, { method: 'DELETE' });
+      fetchUsers();
+    } else if (deleteTarget.type === 'dashboard' && dashboardId !== '') {
+      const res = await fetch(`${API_BASE_URL}/api/dashboards/${dashboardId}`, {
+        method: 'DELETE'
+      });
+      if (res.ok) {
+        setOpenRenameDb(false);
+        setDashboardId('');
+        localStorage.removeItem('selectedDashboardId');
+        await fetchDashboards();
+      }
+    }
+
+    setDeleteConfirmOpen(false);
+    setDeleteTarget(null);
   };
 
   const handleAddDashboard = async () => {
@@ -685,18 +709,8 @@ export default function App() {
 
   const handleDeleteDashboard = async () => {
     if (dashboardId === '') return;
-    if (!window.confirm(`Are you sure you want to delete "${currentDashboardName}"? This will also delete all associated users.`)) return;
-
-    const res = await fetch(`${API_BASE_URL}/api/dashboards/${dashboardId}`, {
-      method: 'DELETE'
-    });
-
-    if (res.ok) {
-      setOpenRenameDb(false);
-      setDashboardId('');
-      localStorage.removeItem('selectedDashboardId');
-      await fetchDashboards();
-    }
+    setDeleteTarget({ type: 'dashboard', name: currentDashboardName });
+    setDeleteConfirmOpen(true);
   };
 
   const EditableHeader = ({ label, fieldKey, hideFieldKey, isEditable = true }: { label: string, fieldKey: keyof typeof headers, hideFieldKey?: keyof typeof headers, isEditable?: boolean }) => {
@@ -921,6 +935,16 @@ export default function App() {
               </Tooltip>
             )}
 
+            {isSettingsMode && dashboardId !== '' && (
+              <Tooltip title='Delete'>
+                <IconButton color='error' onClick={() => {
+                  handleDeleteDashboard();
+                }}>
+                  <DeleteIcon />
+                </IconButton>
+              </Tooltip>
+            )}
+
             <Tooltip title='Add Dashboard'>
               <IconButton onClick={() => setOpenAddDb(true)}><DashboardCustomizeIcon /></IconButton>
             </Tooltip>
@@ -1076,17 +1100,9 @@ export default function App() {
             </Box>
           </DialogContent>
           <DialogActions>
-            <Button
-              onClick={handleDeleteDashboard}
-              color='error'
-              startIcon={<DeleteIcon />}
-              sx={{ mr: 'auto' }}
-            >
-              Delete
-            </Button>
             <Button onClick={() => setOpenRenameDb(false)}>Cancel</Button>
             <Button onClick={handleUpdateDashboard} variant='contained' color='primary' disabled={!renameDbName}>
-              Save Changes
+              Save
             </Button>
           </DialogActions>
         </Dialog>
@@ -1171,6 +1187,50 @@ export default function App() {
               fullWidth
             >
               OK
+            </Button>
+          </DialogActions>
+        </Dialog>
+
+        {/* Delete Confirmation Dialog */}
+        <Dialog
+          open={deleteConfirmOpen}
+          onClose={() => {
+            setDeleteConfirmOpen(false);
+            setDeleteTarget(null);
+          }}
+          maxWidth='sm'
+          fullWidth
+        >
+          <DialogTitle sx={{ fontWeight: 'bold', color: 'error.main' }}>
+            {deleteTarget?.type === 'dashboard' ? 'Delete Dashboard' : 'Delete Member'}
+          </DialogTitle>
+          <DialogContent>
+            <Typography>
+              {deleteTarget?.type === 'dashboard'
+                ? `Are you sure you want to delete "${deleteTarget.name}"? This will also delete all associated users.`
+                : deleteTarget?.name
+                  ? `Are you sure you want to delete "${deleteTarget.name}"?`
+                  : 'Are you sure you want to delete this member?'}
+            </Typography>
+            <Typography sx={{ mt: 2, fontWeight: 'bold', color: 'error.main' }}>
+              This action cannot be undone.
+            </Typography>
+          </DialogContent>
+          <DialogActions>
+            <Button
+              onClick={() => {
+                setDeleteConfirmOpen(false);
+                setDeleteTarget(null);
+              }}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={confirmDelete}
+              variant='contained'
+              color='error'
+            >
+              Delete
             </Button>
           </DialogActions>
         </Dialog>
