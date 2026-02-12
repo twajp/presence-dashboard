@@ -380,9 +380,6 @@ export default function App() {
       const result = await res.json();
       const data = result.success ? result.data : [];
       setDashboards(data);
-      if (data.length > 0 && dashboardId === '') {
-        setDashboardId(data[0].id);
-      }
     } catch (err) { console.error('Failed to fetch dashboards', err); }
   }, [dashboardId]);
 
