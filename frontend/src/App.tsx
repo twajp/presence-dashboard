@@ -446,7 +446,10 @@ export default function App() {
     if (dashboardId !== '') {
       fetchUsers();
       fetchHeaderLabels();
-      let interval = !isSettingsMode ? setInterval(fetchUsers, 10000) : undefined;
+      let interval = !isSettingsMode ? setInterval(() => {
+        fetchUsers();
+        fetchHeaderLabels();
+      }, 10000) : undefined;
       return () => clearInterval(interval);
     }
   }, [fetchUsers, fetchHeaderLabels, isSettingsMode, dashboardId]);
