@@ -675,6 +675,7 @@ export default function App() {
         setDashboardId('');
         localStorage.removeItem('selectedDashboardId');
         await fetchDashboards();
+        setIsSettingsMode(false);
       }
     }
 
