@@ -1199,6 +1199,14 @@ export default function App() {
           </DialogContent>
           <DialogActions>
             <Button
+              onClick={() => { setSettingsWarningOpen(false); setIsSettingsMode(false); }}
+              color='inherit'
+              variant='outlined'
+              fullWidth
+            >
+              Cancel
+            </Button>
+            <Button
               onClick={() => setSettingsWarningOpen(false)}
               variant='contained'
               color='primary'
