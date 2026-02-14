@@ -55,7 +55,7 @@ CREATE TABLE IF NOT EXISTS users (
 
 
 INSERT INTO dashboard_settings (dashboard_name, team_label, name_label, presence_label, note1_label, note2_label, note3_label, check1_label, check2_label, check3_label, updated_at_label, grid_width, grid_height, notes) VALUES
-('テスト在籍表', 'Team', 'Name', 'Status', 'Note 1', 'Note 2', 'Note 3', 'Check 1', 'Check 2', 'Check 3', 'Last Updated', 464, 456, NULL);
+('テスト在籍表', 'Team', 'Name', 'Status', 'Note 1', 'Note 2', 'Note 3', 'Check 1', 'Check 2', 'Check 3', 'Last Updated', 432, 456, NULL);
 
 INSERT INTO users (team, name, presence, note1, note2, note3, check1, check2, check3, `order`, dashboard_id, x, y, width, height) VALUES
 ('織田軍', '織田 信長', 'present', NULL, NULL, NULL, TRUE, TRUE, FALSE, 1, 1, 16, 16, 48, 88),
