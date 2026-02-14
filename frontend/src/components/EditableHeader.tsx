@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Box, TextField } from '@mui/material';
+import { Box, TextField, Checkbox } from '@mui/material';
 import type { DashboardSettings } from '../types/dashboard.types';
 
 type EditableHeaderProps = {
@@ -63,8 +63,7 @@ export const EditableHeader = ({
         >
             {label}
             {isEditable && isSettingsMode && hideFieldKey && (
-                <input
-                    type='checkbox'
+                <Checkbox
                     checked={!settings[hideFieldKey]}
                     onChange={(e) => {
                         e.stopPropagation();
@@ -73,7 +72,8 @@ export const EditableHeader = ({
                     }}
                     onClick={(e) => e.stopPropagation()}
                     title='Show/Hide'
-                    style={{ width: 14, height: 14, cursor: 'pointer' }}
+                    size='small'
+                    sx={{ padding: 0 }}
                 />
             )}
         </Box>
