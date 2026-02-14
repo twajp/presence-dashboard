@@ -33,3 +33,16 @@ export const DEFAULT_DASHBOARD_SETTINGS = {
   grid_height: 460,
   notes: ''
 };
+
+export const DEFAULT_USER_VALUES = {
+  note1: null,
+  note2: null,
+  note3: null,
+  check1: false,
+  check2: false,
+  check3: false,
+  x: 0,
+  y: 0,
+  width: 80,
+  height: 40
+};
