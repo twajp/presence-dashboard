@@ -14,16 +14,15 @@ A dynamic, real-time presence management application with a full-stack architect
 ## Screenshots
 ### Main View
 <table>
-<tr>
-<td><img src="docs/images/main-view-light.png" alt="Main Page - Light Mode"></td>
-<td><img src="docs/images/main-view-dark.png" alt="Main Page - Dark Mode"></td>
-</tr>
-<tr>
-<td align="center"><em>Light Mode</em></td>
-<td align="center"><em>Dark Mode</em></td>
-</tr>
+  <tr>
+    <td><img src="docs/images/main-view-light.png" alt="Main View - Light Mode"></td>
+    <td><img src="docs/images/main-view-dark.png" alt="Main View - Dark Mode"></td>
+  </tr>
+  <tr>
+    <td align="center"><em>Light Mode</em></td>
+    <td align="center"><em>Dark Mode</em></td>
+  </tr>
 </table>
-
 *The main dashboard showing the dual view system with interactive map and data grid*
 
 ### Setting Mode
