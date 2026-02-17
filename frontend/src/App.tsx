@@ -177,10 +177,9 @@ export default function App() {
       const widthField = widthFieldMap[field];
       if (!widthField || dashboardId === '') return;
 
-      const newSettings = { ...settings, [widthField]: width };
-      await updateSettings(newSettings);
+      await updateSettings({ [widthField]: width });
     },
-    [dashboardId, settings, updateSettings]
+    [dashboardId, updateSettings]
   );
 
   // Resize handlers

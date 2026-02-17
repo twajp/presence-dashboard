@@ -11,7 +11,7 @@ type EditableHeaderProps = {
     editingHeader: string | null;
     setEditingHeader: (key: string | null) => void;
     settings: DashboardSettings;
-    onSave: (newSettings: DashboardSettings) => void;
+    onSave: (newSettings: Partial<DashboardSettings>) => void;
 };
 
 export const EditableHeader = ({
@@ -28,8 +28,7 @@ export const EditableHeader = ({
     const [tempValue, setTempValue] = useState(label);
 
     const handleSave = () => {
-        const next = { ...settings, [fieldKey]: tempValue };
-        onSave(next);
+        onSave({ [fieldKey]: tempValue });
     };
 
     if (isEditable && isSettingsMode && editingHeader === fieldKey) {
@@ -67,8 +66,7 @@ export const EditableHeader = ({
                     checked={!settings[hideFieldKey]}
                     onChange={(e) => {
                         e.stopPropagation();
-                        const next = { ...settings, [hideFieldKey]: !e.target.checked };
-                        onSave(next);
+                        onSave({ [hideFieldKey]: !e.target.checked });
                     }}
                     onClick={(e) => e.stopPropagation()}
                     title='Show/Hide'
