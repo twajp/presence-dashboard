@@ -1,5 +1,5 @@
 import { type GridColDef } from '@mui/x-data-grid';
-import { Button, Box, IconButton, Stack } from '@mui/material';
+import { Button, Box, IconButton, Stack, Checkbox } from '@mui/material';
 import {
     Delete as DeleteIcon,
     ArrowUpward as ArrowUpwardIcon,
@@ -202,11 +202,10 @@ export const createDataGridColumns = ({
             ),
             renderCell: (p: any) => (
                 <Box display='flex' justifyContent='center' alignItems='center' width='100%' height='100%'>
-                    <input
-                        type='checkbox'
+                    <Checkbox
                         checked={p.row.check1 || false}
                         onChange={(e) => onUserUpdate(p.row.id, { check1: e.target.checked })}
-                        style={{ width: 18, height: 18, cursor: 'pointer' }}
+                        size='small'
                     />
                 </Box>
             ),
@@ -232,11 +231,10 @@ export const createDataGridColumns = ({
             ),
             renderCell: (p: any) => (
                 <Box display='flex' justifyContent='center' alignItems='center' width='100%' height='100%'>
-                    <input
-                        type='checkbox'
+                    <Checkbox
                         checked={p.row.check2 || false}
                         onChange={(e) => onUserUpdate(p.row.id, { check2: e.target.checked })}
-                        style={{ width: 18, height: 18, cursor: 'pointer' }}
+                        size='small'
                     />
                 </Box>
             ),
@@ -262,11 +260,10 @@ export const createDataGridColumns = ({
             ),
             renderCell: (p: any) => (
                 <Box display='flex' justifyContent='center' alignItems='center' width='100%' height='100%'>
-                    <input
-                        type='checkbox'
+                    <Checkbox
                         checked={p.row.check3 || false}
                         onChange={(e) => onUserUpdate(p.row.id, { check3: e.target.checked })}
-                        style={{ width: 18, height: 18, cursor: 'pointer' }}
+                        size='small'
                     />
                 </Box>
             ),
