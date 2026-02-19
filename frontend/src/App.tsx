@@ -3,7 +3,7 @@ import { DataGrid, type GridSortModel } from '@mui/x-data-grid';
 import {
   Button, CircularProgress, Box, ThemeProvider, createTheme, CssBaseline,
   useMediaQuery, Select, MenuItem, FormControl, InputLabel, Typography,
-  IconButton, TextField, Tooltip
+  IconButton, TextField, Tooltip, GlobalStyles
 } from '@mui/material';
 import {
   Add as AddIcon,
@@ -276,6 +276,24 @@ export default function App() {
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
+      <GlobalStyles
+        styles={{
+          '*::-webkit-scrollbar': {
+            width: '12px',
+            height: '12px',
+          },
+          '*::-webkit-scrollbar-track': {
+            backgroundColor: theme.palette.mode === 'dark' ? '#2b2b2b' : '#f1f1f1',
+          },
+          '*::-webkit-scrollbar-thumb': {
+            backgroundColor: theme.palette.mode === 'dark' ? '#555' : '#888',
+            borderRadius: '6px',
+            '&:hover': {
+              backgroundColor: theme.palette.mode === 'dark' ? '#777' : '#555',
+            },
+          },
+        }}
+      />
       <Box display='flex' flexDirection='column' width='100vw' height='100vh'>
         {/* Header */}
         <Box
@@ -504,7 +522,13 @@ export default function App() {
                     backgroundColor: prefersDarkMode ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.05)'
                   },
                   '& .MuiDataGrid-row:hover': {
-                    backgroundColor: prefersDarkMode ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.08)'
+                    backgroundColor: prefersDarkMode ? 'rgba(144, 202, 249, 0.16)' : 'rgba(25, 118, 210, 0.08)'
+                  },
+                  '& .MuiDataGrid-row.Mui-selected': {
+                    backgroundColor: prefersDarkMode ? 'rgba(144, 202, 249, 0.16)' : 'rgba(25, 118, 210, 0.12)',
+                    '&:hover': {
+                      backgroundColor: prefersDarkMode ? 'rgba(144, 202, 249, 0.24)' : 'rgba(25, 118, 210, 0.16)'
+                    }
                   }
                 }}
               />
