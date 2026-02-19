@@ -15,7 +15,7 @@ type CreateColumnsParams = {
     isSettingsMode: boolean;
     editingHeader: string | null;
     setEditingHeader: (key: string | null) => void;
-    onSettingsUpdate: (newSettings: DashboardSettings) => void;
+    onSettingsUpdate: (newSettings: Partial<DashboardSettings>) => void;
     onPresenceClick: (user: User) => void;
     onUserUpdate: (id: number, data: Partial<User>) => void;
     onMoveUser: (index: number, direction: 'up' | 'down') => void;

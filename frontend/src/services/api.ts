@@ -76,7 +76,7 @@ export const bulkUpdateUserPresence = async (users: User[], status: PresenceStat
         fetch(`${API_BASE_URL}/api/users/${user.id}`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ ...user, presence: status }),
+            body: JSON.stringify({ presence: status }),
         })
     );
     await Promise.all(updatePromises);
@@ -94,7 +94,7 @@ export const fetchDashboardSettings = async (dashboardId: number): Promise<Parti
     }
 };
 
-export const updateDashboardSettings = async (dashboardId: number, settings: DashboardSettings): Promise<void> => {
+export const updateDashboardSettings = async (dashboardId: number, settings: Partial<DashboardSettings>): Promise<void> => {
     await fetch(`${API_BASE_URL}/api/dashboards/${dashboardId}/settings`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },

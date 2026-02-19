@@ -32,8 +32,8 @@ export const useUsers = (dashboardId: number | '', isSettingsMode: boolean) => {
         const user = users.find((u) => u.id === id);
         if (!user) return;
 
-        const payload = { ...user, ...data };
-        const result = await api.updateUser(id, payload);
+        // Send only changed fields
+        const result = await api.updateUser(id, data);
 
         if (result.success && result.data) {
             setUsers(prev => {

@@ -50,29 +50,26 @@ export const useSettings = (dashboardId: number | '', isSettingsMode: boolean) =
         setNotes(newSettings.notes);
     }, [dashboardId]);
 
-    const updateSettings = useCallback(async (newSettings: DashboardSettings) => {
+    const updateSettings = useCallback(async (newSettings: Partial<DashboardSettings>) => {
         if (dashboardId === '') return;
-        setSettings(newSettings);
+        setSettings(prev => ({ ...prev, ...newSettings }));
         await api.updateDashboardSettings(dashboardId, newSettings);
     }, [dashboardId]);
 
     const updateGridWidth = useCallback(async (width: number) => {
         setGridWidth(width);
-        const newSettings = { ...settings, grid_width: width };
-        await updateSettings(newSettings);
-    }, [settings, updateSettings]);
+        await updateSettings({ grid_width: width });
+    }, [updateSettings]);
 
     const updateGridHeight = useCallback(async (height: number) => {
         setGridHeight(height);
-        const newSettings = { ...settings, grid_height: height };
-        await updateSettings(newSettings);
-    }, [settings, updateSettings]);
+        await updateSettings({ grid_height: height });
+    }, [updateSettings]);
 
     const updateNotes = useCallback(async (newNotes: string) => {
         setNotes(newNotes);
-        const newSettings = { ...settings, notes: newNotes };
-        await updateSettings(newSettings);
-    }, [settings, updateSettings]);
+        await updateSettings({ notes: newNotes });
+    }, [updateSettings]);
 
     useEffect(() => {
         if (dashboardId !== '') {
