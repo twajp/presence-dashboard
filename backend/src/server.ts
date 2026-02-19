@@ -225,63 +225,55 @@ app.get('/health', async (req, res) => {
                 return sendError(res, 400, 'Invalid grid_height');
             }
 
-            const values = [
-                dashboardId,
-                team_label ?? null,
-                name_label ?? null,
-                presence_label ?? null,
-                note1_label ?? null,
-                note2_label ?? null,
-                note3_label ?? null,
-                check1_label ?? null,
-                check2_label ?? null,
-                check3_label ?? null,
-                updated_at_label ?? null,
-                hide_note1 ?? false,
-                hide_note2 ?? false,
-                hide_note3 ?? false,
-                hide_check1 ?? false,
-                hide_check2 ?? false,
-                hide_check3 ?? false,
-                hide_updated_at ?? false,
-                team_width ?? null,
-                name_width ?? null,
-                presence_width ?? null,
-                note1_width ?? null,
-                note2_width ?? null,
-                note3_width ?? null,
-                check1_width ?? null,
-                check2_width ?? null,
-                check3_width ?? null,
-                updated_at_width ?? null,
-                grid_width ?? null,
-                grid_height ?? null,
-                notes ?? null
-            ];
+            // Build dynamic UPDATE query with only provided fields
+            const updates: string[] = [];
+            const values: any[] = [];
 
-            await connection.execute(
-                `INSERT INTO dashboard_settings 
-                (id, team_label, name_label, presence_label, note1_label, note2_label, note3_label, 
-                check1_label, check2_label, check3_label, updated_at_label, 
-                hide_note1, hide_note2, hide_note3, hide_check1, hide_check2, hide_check3, hide_updated_at, 
-                team_width, name_width, presence_width, note1_width, note2_width, note3_width, 
-                check1_width, check2_width, check3_width, updated_at_width, 
-                grid_width, grid_height, notes) 
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) 
-                ON DUPLICATE KEY UPDATE 
-                team_label=?, name_label=?, presence_label=?, 
-                note1_label=?, note2_label=?, note3_label=?, 
-                check1_label=?, check2_label=?, check3_label=?, 
-                updated_at_label=?, 
-                hide_note1=?, hide_note2=?, hide_note3=?, 
-                hide_check1=?, hide_check2=?, hide_check3=?, hide_updated_at=?, 
-                team_width=?, name_width=?, presence_width=?, 
-                note1_width=?, note2_width=?, note3_width=?, 
-                check1_width=?, check2_width=?, check3_width=?, 
-                updated_at_width=?, 
-                grid_width=?, grid_height=?, notes=?`,
-                [...values, ...values.slice(1)]
+            if (team_label !== undefined) { updates.push('team_label=?'); values.push(team_label); }
+            if (name_label !== undefined) { updates.push('name_label=?'); values.push(name_label); }
+            if (presence_label !== undefined) { updates.push('presence_label=?'); values.push(presence_label); }
+            if (note1_label !== undefined) { updates.push('note1_label=?'); values.push(note1_label); }
+            if (note2_label !== undefined) { updates.push('note2_label=?'); values.push(note2_label); }
+            if (note3_label !== undefined) { updates.push('note3_label=?'); values.push(note3_label); }
+            if (check1_label !== undefined) { updates.push('check1_label=?'); values.push(check1_label); }
+            if (check2_label !== undefined) { updates.push('check2_label=?'); values.push(check2_label); }
+            if (check3_label !== undefined) { updates.push('check3_label=?'); values.push(check3_label); }
+            if (updated_at_label !== undefined) { updates.push('updated_at_label=?'); values.push(updated_at_label); }
+            if (hide_note1 !== undefined) { updates.push('hide_note1=?'); values.push(hide_note1); }
+            if (hide_note2 !== undefined) { updates.push('hide_note2=?'); values.push(hide_note2); }
+            if (hide_note3 !== undefined) { updates.push('hide_note3=?'); values.push(hide_note3); }
+            if (hide_check1 !== undefined) { updates.push('hide_check1=?'); values.push(hide_check1); }
+            if (hide_check2 !== undefined) { updates.push('hide_check2=?'); values.push(hide_check2); }
+            if (hide_check3 !== undefined) { updates.push('hide_check3=?'); values.push(hide_check3); }
+            if (hide_updated_at !== undefined) { updates.push('hide_updated_at=?'); values.push(hide_updated_at); }
+            if (team_width !== undefined) { updates.push('team_width=?'); values.push(team_width); }
+            if (name_width !== undefined) { updates.push('name_width=?'); values.push(name_width); }
+            if (presence_width !== undefined) { updates.push('presence_width=?'); values.push(presence_width); }
+            if (note1_width !== undefined) { updates.push('note1_width=?'); values.push(note1_width); }
+            if (note2_width !== undefined) { updates.push('note2_width=?'); values.push(note2_width); }
+            if (note3_width !== undefined) { updates.push('note3_width=?'); values.push(note3_width); }
+            if (check1_width !== undefined) { updates.push('check1_width=?'); values.push(check1_width); }
+            if (check2_width !== undefined) { updates.push('check2_width=?'); values.push(check2_width); }
+            if (check3_width !== undefined) { updates.push('check3_width=?'); values.push(check3_width); }
+            if (updated_at_width !== undefined) { updates.push('updated_at_width=?'); values.push(updated_at_width); }
+            if (grid_width !== undefined) { updates.push('grid_width=?'); values.push(grid_width); }
+            if (grid_height !== undefined) { updates.push('grid_height=?'); values.push(grid_height); }
+            if (notes !== undefined) { updates.push('notes=?'); values.push(notes); }
+
+            if (updates.length === 0) {
+                return sendError(res, 400, 'No fields to update');
+            }
+
+            values.push(dashboardId);
+
+            const [result] = await connection.execute<ResultSetHeader>(
+                `UPDATE dashboard_settings SET ${updates.join(', ')} WHERE id=?`,
+                values
             );
+
+            if (result.affectedRows === 0) {
+                return sendError(res, 404, 'Dashboard not found');
+            }
 
             sendSuccess(res, { id: Number(dashboardId) });
         }));
@@ -378,12 +370,34 @@ app.get('/health', async (req, res) => {
                 return sendError(res, 400, 'Invalid presence status');
             }
 
+            // Build dynamic UPDATE query with only provided fields
+            const updates: string[] = [];
+            const values: any[] = [];
+
+            if (team !== undefined) { updates.push('team=?'); values.push(team); }
+            if (name !== undefined) { updates.push('name=?'); values.push(name.trim()); }
+            if (presence !== undefined) { updates.push('presence=?'); values.push(presence); }
+            if (note1 !== undefined) { updates.push('note1=?'); values.push(note1); }
+            if (note2 !== undefined) { updates.push('note2=?'); values.push(note2); }
+            if (note3 !== undefined) { updates.push('note3=?'); values.push(note3); }
+            if (check1 !== undefined) { updates.push('check1=?'); values.push(check1); }
+            if (check2 !== undefined) { updates.push('check2=?'); values.push(check2); }
+            if (check3 !== undefined) { updates.push('check3=?'); values.push(check3); }
+            if (x !== undefined) { updates.push('x=?'); values.push(x); }
+            if (y !== undefined) { updates.push('y=?'); values.push(y); }
+            if (width !== undefined) { updates.push('width=?'); values.push(width); }
+            if (height !== undefined) { updates.push('height=?'); values.push(height); }
+            if (order !== undefined) { updates.push('`order`=?'); values.push(order); }
+
+            if (updates.length === 0) {
+                return sendError(res, 400, 'No fields to update');
+            }
+
+            values.push(userId);
+
             const [result] = await connection.execute<ResultSetHeader>(
-                `UPDATE users SET 
-                team=?, name=?, presence=?, note1=?, note2=?, note3=?, 
-                check1=?, check2=?, check3=?, x=?, y=?, width=?, height=?, \`order\`=? 
-                WHERE id=?`,
-                [team, name?.trim(), presence, note1, note2, note3, check1, check2, check3, x, y, width, height, order, userId]
+                `UPDATE users SET ${updates.join(', ')} WHERE id=?`,
+                values
             );
 
             if (result.affectedRows === 0) {
