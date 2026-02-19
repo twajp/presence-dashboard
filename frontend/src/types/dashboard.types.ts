@@ -9,9 +9,9 @@ export type User = {
     id: number;
     name: string;
     presence: PresenceStatus;
-    note1?: string;
-    note2?: string;
-    note3?: string;
+    note1?: string | null;
+    note2?: string | null;
+    note3?: string | null;
     check1?: boolean;
     check2?: boolean;
     check3?: boolean;
