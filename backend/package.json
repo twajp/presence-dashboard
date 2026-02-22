@@ -8,7 +8,7 @@
   },
   "dependencies": {
     "express": "^5.2.1",
-    "mysql2": "^3.17.2"
+    "mysql2": "^3.17.4"
   },
   "devDependencies": {
     "tsx": "^4.7.0",
